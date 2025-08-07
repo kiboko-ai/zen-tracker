@@ -111,6 +111,18 @@ export default function TimerPage() {
     <div className="flex h-full w-full flex-col bg-white relative">
       <div className="ios-safe-area-top" />
       
+      {/* Back button only shown during target picker */}
+      {showTargetPicker && !isRunning && (
+        <div className="px-6 py-4">
+          <button
+            onClick={() => router.push('/home')}
+            className="text-sm font-light text-gray-500"
+          >
+            ← Back
+          </button>
+        </div>
+      )}
+      
       <AnimatePresence>
         {showGradient && (
           <motion.div
