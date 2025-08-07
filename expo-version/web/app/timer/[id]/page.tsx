@@ -134,7 +134,14 @@ export default function TimerPage() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6">
-        <h1 className="text-2xl font-light mb-8">{activity.name}</h1>
+        <motion.h1 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: isRunning ? 1.5 : 0.5 }}
+          className="text-2xl font-light mb-8"
+        >
+          {activity.name}
+        </motion.h1>
 
         {showTargetPicker && !isRunning ? (
           <motion.div
@@ -180,8 +187,10 @@ export default function TimerPage() {
           </motion.div>
         ) : (
           <motion.div
+            key="timer-display"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
             className="w-64 h-64 relative"
           >
             <CircularProgressbar
@@ -192,7 +201,12 @@ export default function TimerPage() {
                 pathTransitionDuration: 1,
               })}
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.5, delay: 0.3 }}
+              className="absolute inset-0 flex flex-col items-center justify-center"
+            >
               <div className="text-4xl font-extralight mb-2">
                 {formatTimeDisplay(seconds)}
               </div>
@@ -201,7 +215,7 @@ export default function TimerPage() {
                   Target: {formatTime(targetSeconds)}
                 </div>
               )}
-            </div>
+            </motion.div>
           </motion.div>
         )}
 
@@ -219,7 +233,12 @@ export default function TimerPage() {
         </AnimatePresence>
 
         {isRunning && (
-          <div className="mt-12 flex gap-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.5 }}
+            className="mt-12 flex gap-4"
+          >
             {!isPaused ? (
               <motion.button
                 initial={{ opacity: 0 }}
@@ -252,7 +271,7 @@ export default function TimerPage() {
                 </motion.button>
               </>
             )}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

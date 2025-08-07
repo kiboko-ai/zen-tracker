@@ -76,7 +76,12 @@ export default function HomePage() {
   })
 
   return (
-    <div className="flex h-full w-full flex-col bg-white">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex h-full w-full flex-col bg-white"
+    >
       <div className="ios-safe-area-top" />
       
       <div className="px-6 py-4">
@@ -266,6 +271,6 @@ export default function HomePage() {
           </button>
         </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }
