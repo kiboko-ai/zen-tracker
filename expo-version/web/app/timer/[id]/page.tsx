@@ -199,14 +199,20 @@ export default function TimerPage() {
             transition={{ duration: 1.5, ease: "easeOut" }}
             className="w-64 h-64 relative"
           >
-            <CircularProgressbar
-              value={progress}
-              styles={buildStyles({
-                pathColor: isGoalReached ? '#22c55e' : '#000',
-                trailColor: '#f3f4f6',
-                pathTransitionDuration: 1,
-              })}
-            />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: progress > 0 ? 1 : 0 }}
+              transition={{ duration: 1.5 }}
+            >
+              <CircularProgressbar
+                value={progress}
+                styles={buildStyles({
+                  pathColor: isGoalReached ? '#22c55e' : '#000',
+                  trailColor: '#f3f4f6',
+                  pathTransitionDuration: 1,
+                })}
+              />
+            </motion.div>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

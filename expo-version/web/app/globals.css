@@ -60,4 +60,17 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  @keyframes fadeInPath {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .CircularProgressbar-path {
+    animation: fadeInPath 1.5s ease-out;
+  }
 }
