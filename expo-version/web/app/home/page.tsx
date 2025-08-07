@@ -108,7 +108,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="flex-1 px-6 pb-6 overflow-y-auto scrollbar-hide">
+      <div className="flex-1 px-6 pb-6 overflow-y-auto scrollbar-hide flex flex-col justify-center" style={{ paddingBottom: '60%' }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-light">Choose Your Zen</h2>
           <div className="flex gap-2">
