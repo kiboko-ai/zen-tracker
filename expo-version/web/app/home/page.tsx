@@ -218,8 +218,7 @@ export default function HomePage() {
                       animate={{ x: removingId === activity.id ? '0%' : '100%' }}
                       exit={{ x: '100%' }}
                       transition={{ type: 'spring', damping: 20 }}
-                      className="absolute inset-y-0 right-0 w-24 bg-white flex items-center justify-center rounded-r-2xl"
-                      style={{ boxShadow: 'inset 1px 1px 0 0 black, inset -1px -1px 0 0 black, inset -1px 1px 0 0 black' }}
+                      className="absolute inset-y-0 right-0 w-24 bg-white flex items-center justify-center rounded-r-2xl border border-black border-l-0"
                     >
                       <button
                         onClick={() => handleRemoveActivity(activity.id)}
