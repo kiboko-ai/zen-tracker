@@ -180,11 +180,11 @@ export default function HomePage() {
               }}
               className="relative"
             >
-              <div className="relative overflow-hidden rounded-2xl">
+              <div className="relative overflow-hidden rounded-2xl bg-black">
                 <button
                   onClick={() => !editMode && handleStartActivity(activity.id)}
                   disabled={editMode}
-                  className={`w-full py-4 px-6 rounded-2xl transition-all duration-300 text-left relative bg-black text-white`}
+                  className={`w-full py-4 px-6 transition-all duration-300 text-left relative bg-black text-white`}
                 >
                   {editingId === activity.id ? (
                     <input
@@ -218,11 +218,12 @@ export default function HomePage() {
                       animate={{ x: removingId === activity.id ? '0%' : '100%' }}
                       exit={{ x: '100%' }}
                       transition={{ type: 'spring', damping: 20 }}
-                      className="absolute inset-y-0 right-0 bg-red-500 flex items-center justify-center px-6"
+                      className="absolute inset-y-0 right-0 w-24 bg-white flex items-center justify-center rounded-r-2xl"
+                      style={{ boxShadow: 'inset 1px 1px 0 0 black, inset -1px -1px 0 0 black, inset -1px 1px 0 0 black' }}
                     >
                       <button
                         onClick={() => handleRemoveActivity(activity.id)}
-                        className="text-white font-light"
+                        className="text-black font-light text-sm"
                       >
                         remove
                       </button>
@@ -230,9 +231,9 @@ export default function HomePage() {
                   </AnimatePresence>
                 )}
 
-                {editMode && (
+                {editMode && removingId !== activity.id && (
                   <button
-                    onClick={() => setRemovingId(removingId === activity.id ? null : activity.id)}
+                    onClick={() => setRemovingId(activity.id)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
                   >
                     <span className="text-xl font-light">−</span>
