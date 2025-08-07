@@ -112,6 +112,7 @@ export default function HomePage() {
       className="flex h-full w-full flex-col bg-white"
     >
       <div className="ios-safe-area-top" />
+      <div className="h-8" />
       
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-2">
