@@ -57,11 +57,8 @@ export default function HomePage() {
   }
 
   const handleRemoveActivity = (id: string) => {
-    setRemovingId(id)
-    setTimeout(() => {
-      removeActivity(id)
-      setRemovingId(null)
-    }, 300)
+    removeActivity(id)
+    setRemovingId(null)
   }
 
   const handleStartActivity = (activityId: string) => {
@@ -172,8 +169,8 @@ export default function HomePage() {
               layout
               initial={{ opacity: 0, x: -20 }}
               animate={{ 
-                opacity: removingId === activity.id ? 0 : 1, 
-                x: removingId === activity.id ? -100 : 0,
+                opacity: 1, 
+                x: 0,
                 scale: editingId && editingId !== activity.id ? 0.95 : 1
               }}
               transition={{ 
