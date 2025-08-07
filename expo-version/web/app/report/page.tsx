@@ -6,12 +6,11 @@ import { useRouter } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, addDays, subDays } from 'date-fns'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
-import Clock24Chart from '@/components/Clock24Chart'
 import Clock24ChartImproved from '@/components/Clock24ChartImproved'
 import TimelineChart from '@/components/TimelineChart'
 
 type TabType = 'daily' | 'weekly' | 'monthly' | 'yearly'
-type ChartView = 'clock' | 'timeline' | 'rings'
+type ChartView = 'timeline' | 'rings'
 
 export default function ReportPage() {
   const router = useRouter()
@@ -166,7 +165,7 @@ export default function ReportPage() {
             <div className="flex justify-center gap-2 mb-4">
               <button
                 onClick={() => setChartView('timeline')}
-                className={`px-3 py-2 rounded-lg text-sm font-light transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-light transition-all ${
                   chartView === 'timeline' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
                 }`}
               >
@@ -174,31 +173,16 @@ export default function ReportPage() {
               </button>
               <button
                 onClick={() => setChartView('rings')}
-                className={`px-3 py-2 rounded-lg text-sm font-light transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-light transition-all ${
                   chartView === 'rings' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
                 }`}
               >
-                Rings
-              </button>
-              <button
-                onClick={() => setChartView('clock')}
-                className={`px-3 py-2 rounded-lg text-sm font-light transition-all ${
-                  chartView === 'clock' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                Clock
+                24h Rings
               </button>
             </div>
 
             {/* Chart Display */}
             <div className="mb-6">
-              {chartView === 'clock' && (
-                <Clock24Chart 
-                  sessions={filteredSessions}
-                  activities={activities}
-                  selectedDate={selectedDate}
-                />
-              )}
               {chartView === 'rings' && (
                 <Clock24ChartImproved
                   sessions={filteredSessions}
