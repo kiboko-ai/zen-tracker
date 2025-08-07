@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/lib/store'
-import { format } from 'date-fns'
+import { format, startOfDay, endOfDay, isWithinInterval } from 'date-fns'
 
 export default function HomePage() {
   const router = useRouter()
-  const { activities, addActivity, removeActivity, updateActivity } = useStore()
+  const { activities, sessions, addActivity, removeActivity, updateActivity } = useStore()
   const [editMode, setEditMode] = useState(false)
   const [showKeyboard, setShowKeyboard] = useState(false)
   const [newActivityName, setNewActivityName] = useState('')
@@ -63,6 +63,35 @@ export default function HomePage() {
 
   const handleStartActivity = (activityId: string) => {
     router.push(`/timer/${activityId}`)
+  }
+
+  const todayActivityTimes = useMemo(() => {
+    const today = new Date()
+    const todayStart = startOfDay(today)
+    const todayEnd = endOfDay(today)
+    
+    const timesMap = new Map<string, number>()
+    
+    sessions.forEach(session => {
+      const sessionDate = new Date(session.startTime)
+      if (isWithinInterval(sessionDate, { start: todayStart, end: todayEnd })) {
+        const currentTime = timesMap.get(session.activityId) || 0
+        timesMap.set(session.activityId, currentTime + session.duration)
+      }
+    })
+    
+    return timesMap
+  }, [sessions])
+
+  const formatActivityTime = (ms: number) => {
+    const totalMinutes = Math.floor(ms / 60000)
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`
+    }
+    return `${minutes} min`
   }
 
   const sortedActivities = [...activities].sort((a, b) => {
@@ -189,7 +218,7 @@ export default function HomePage() {
                 <button
                   onClick={() => !editMode && handleStartActivity(activity.id)}
                   disabled={editMode}
-                  className={`w-full py-4 px-6 transition-all duration-300 text-left relative bg-black text-white`}
+                  className={`w-full ${todayActivityTimes.has(activity.id) ? 'py-3' : 'py-4'} px-6 transition-all duration-300 text-left relative bg-black text-white`}
                 >
                   {editingId === activity.id ? (
                     <input
@@ -202,17 +231,24 @@ export default function HomePage() {
                       autoFocus
                     />
                   ) : (
-                    <span 
-                      className="font-light text-lg"
-                      onClick={(e) => {
-                        if (editMode) {
-                          e.stopPropagation()
-                          handleEditActivity(activity.id, activity.name)
-                        }
-                      }}
-                    >
-                      {activity.name}
-                    </span>
+                    <div>
+                      <span 
+                        className="font-light text-lg block"
+                        onClick={(e) => {
+                          if (editMode) {
+                            e.stopPropagation()
+                            handleEditActivity(activity.id, activity.name)
+                          }
+                        }}
+                      >
+                        {activity.name}
+                      </span>
+                      {todayActivityTimes.has(activity.id) && (
+                        <span className="text-xs font-extralight text-gray-300 mt-1 block">
+                          {formatActivityTime(todayActivityTimes.get(activity.id)!)} focused today
+                        </span>
+                      )}
+                    </div>
                   )}
                 </button>
 
