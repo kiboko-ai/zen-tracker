@@ -124,14 +124,6 @@ export default function TimerPage() {
         )}
       </AnimatePresence>
 
-      <div className="px-6 py-4">
-        <button
-          onClick={() => router.push('/home')}
-          className="text-sm font-light text-gray-500"
-        >
-          ← Back
-        </button>
-      </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         {!isRunning ? (

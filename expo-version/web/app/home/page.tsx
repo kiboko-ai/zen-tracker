@@ -158,7 +158,7 @@ export default function HomePage() {
                   onChange={(e) => setNewActivityName(e.target.value)}
                   onBlur={handleSaveNewActivity}
                   onKeyPress={(e) => e.key === 'Enter' && handleSaveNewActivity()}
-                  placeholder="Activity name"
+                  placeholder="name your Zen"
                   className="w-full bg-transparent outline-none font-light text-lg"
                   autoFocus
                 />
