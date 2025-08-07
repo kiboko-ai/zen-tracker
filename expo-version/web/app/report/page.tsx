@@ -4,17 +4,23 @@ import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/lib/store'
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns'
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, addDays, subDays } from 'date-fns'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
+import Clock24Chart from '@/components/Clock24Chart'
+import Clock24ChartImproved from '@/components/Clock24ChartImproved'
+import TimelineChart from '@/components/TimelineChart'
 
 type TabType = 'daily' | 'weekly' | 'monthly' | 'yearly'
+type ChartView = 'clock' | 'timeline' | 'rings'
 
 export default function ReportPage() {
   const router = useRouter()
   const { sessions, activities } = useStore()
   const [activeTab, setActiveTab] = useState<TabType>('daily')
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [chartView, setChartView] = useState<ChartView>('timeline')
   
-  const now = new Date()
+  const now = selectedDate
 
   const getDateRange = (tab: TabType) => {
     switch (tab) {
@@ -125,9 +131,91 @@ export default function ReportPage() {
       </div>
 
       <div className="flex-1 px-6 pb-6 overflow-y-auto scrollbar-hide">
-        <div className="mb-4">
-          <p className="text-sm font-light text-gray-500">{getDateLabel()}</p>
-        </div>
+        {activeTab === 'daily' && (
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+              className="p-2 text-gray-500 hover:text-black transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M12 15l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <p className="text-lg font-light">{format(selectedDate, 'yyyy. MM. dd')}</p>
+            <button
+              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+              className="p-2 text-gray-500 hover:text-black transition-colors"
+              disabled={format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M8 15l5-5-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        )}
+        
+        {activeTab !== 'daily' && (
+          <div className="mb-4">
+            <p className="text-sm font-light text-gray-500">{getDateLabel()}</p>
+          </div>
+        )}
+
+        {activeTab === 'daily' && (
+          <>
+            {/* Chart View Toggle */}
+            <div className="flex justify-center gap-2 mb-4">
+              <button
+                onClick={() => setChartView('timeline')}
+                className={`px-3 py-2 rounded-lg text-sm font-light transition-all ${
+                  chartView === 'timeline' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                Timeline
+              </button>
+              <button
+                onClick={() => setChartView('rings')}
+                className={`px-3 py-2 rounded-lg text-sm font-light transition-all ${
+                  chartView === 'rings' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                Rings
+              </button>
+              <button
+                onClick={() => setChartView('clock')}
+                className={`px-3 py-2 rounded-lg text-sm font-light transition-all ${
+                  chartView === 'clock' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                Clock
+              </button>
+            </div>
+
+            {/* Chart Display */}
+            <div className="mb-6">
+              {chartView === 'clock' && (
+                <Clock24Chart 
+                  sessions={filteredSessions}
+                  activities={activities}
+                  selectedDate={selectedDate}
+                />
+              )}
+              {chartView === 'rings' && (
+                <Clock24ChartImproved
+                  sessions={filteredSessions}
+                  activities={activities}
+                  selectedDate={selectedDate}
+                />
+              )}
+              {chartView === 'timeline' && (
+                <TimelineChart
+                  sessions={filteredSessions}
+                  activities={activities}
+                  selectedDate={selectedDate}
+                />
+              )}
+            </div>
+          </>
+        )}
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-gray-50 rounded-xl p-4">
