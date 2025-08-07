@@ -187,9 +187,7 @@ export default function HomePage() {
                 <button
                   onClick={() => !editMode && handleStartActivity(activity.id)}
                   disabled={editMode}
-                  className={`w-full py-4 px-6 rounded-2xl border transition-all duration-300 text-left relative ${
-                    index === 0 && !editMode ? 'bg-gradient-to-b from-gray-50 to-white' : 'bg-white'
-                  } ${editMode ? 'border-gray-200' : 'border-gray-200 hover:border-gray-400'}`}
+                  className={`w-full py-4 px-6 rounded-2xl transition-all duration-300 text-left relative bg-black text-white`}
                 >
                   {editingId === activity.id ? (
                     <input
@@ -198,7 +196,7 @@ export default function HomePage() {
                       onChange={(e) => setNewActivityName(e.target.value)}
                       onBlur={handleUpdateActivity}
                       onKeyPress={(e) => e.key === 'Enter' && handleUpdateActivity()}
-                      className="w-full bg-transparent outline-none font-light text-lg"
+                      className="w-full bg-transparent outline-none font-light text-lg text-white"
                       autoFocus
                     />
                   ) : (
