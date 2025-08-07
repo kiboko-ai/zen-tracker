@@ -134,14 +134,20 @@ export default function TimerPage() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6">
-        <motion.h1 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: isRunning ? 1.5 : 0.5 }}
-          className="text-2xl font-light mb-8"
-        >
-          {activity.name}
-        </motion.h1>
+        {!isRunning ? (
+          <h1 className="text-2xl font-light mb-8">
+            {activity.name}
+          </h1>
+        ) : (
+          <motion.h1 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5 }}
+            className="text-2xl font-light mb-8"
+          >
+            {activity.name}
+          </motion.h1>
+        )}
 
         {showTargetPicker && !isRunning ? (
           <motion.div
