@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Circle, Path, G } from 'react-native-svg';
-import { Activity } from '../store/store';
+import { Activity, Session } from '../store/store';
 
 interface RingsChartProps {
   activities: Activity[];
+  sessions: Session[];
   date: Date;
 }
 
@@ -12,7 +13,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const chartSize = Math.min(screenWidth - 40, 300);
 const center = chartSize / 2;
 
-export const RingsChart: React.FC<RingsChartProps> = ({ activities, date }) => {
+export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, date }) => {
   const getActivityColor = (activityName: string) => {
     const colors = [
       '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
@@ -27,7 +28,7 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, date }) => {
 
   const getSessionsForDate = () => {
     const targetDate = date.toDateString();
-    const sessions: Array<{
+    const chartSessions: Array<{
       activity: string;
       startHour: number;
       endHour: number;
@@ -35,21 +36,21 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, date }) => {
       color: string;
     }> = [];
 
-    if (!activities || activities.length === 0) {
-      return sessions;
+    if (!sessions || sessions.length === 0 || !activities || activities.length === 0) {
+      return chartSessions;
     }
 
-    activities.forEach(activity => {
-      if (activity.sessions && activity.sessions.length > 0) {
-        activity.sessions.forEach(session => {
-        const sessionDate = new Date(session.startTime).toDateString();
-        if (sessionDate === targetDate && session.endTime) {
+    sessions.forEach(session => {
+      const sessionDate = new Date(session.startTime).toDateString();
+      if (sessionDate === targetDate && session.endTime) {
+        const activity = activities.find(a => a.id === session.activityId);
+        if (activity) {
           const startTime = new Date(session.startTime);
           const endTime = new Date(session.endTime);
           const startHour = startTime.getHours() + startTime.getMinutes() / 60;
           const endHour = endTime.getHours() + endTime.getMinutes() / 60;
           
-          sessions.push({
+          chartSessions.push({
             activity: activity.name,
             startHour,
             endHour,
@@ -57,14 +58,13 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, date }) => {
             color: getActivityColor(activity.name)
           });
         }
-        });
       }
     });
 
-    return sessions;
+    return chartSessions;
   };
 
-  const sessions = getSessionsForDate();
+  const chartSessions = getSessionsForDate();
 
   const createArcPath = (startAngle: number, endAngle: number, radius: number) => {
     const startAngleRad = (startAngle - 90) * Math.PI / 180;
@@ -126,9 +126,9 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, date }) => {
   };
 
   const renderActivityRings = () => {
-    const activityGroups: { [key: string]: typeof sessions } = {};
+    const activityGroups: { [key: string]: typeof chartSessions } = {};
     
-    sessions.forEach(session => {
+    chartSessions.forEach(session => {
       if (!activityGroups[session.activity]) {
         activityGroups[session.activity] = [];
       }
@@ -181,7 +181,7 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, date }) => {
   const renderLegend = () => {
     const activityGroups: { [key: string]: number } = {};
     
-    sessions.forEach(session => {
+    chartSessions.forEach(session => {
       if (!activityGroups[session.activity]) {
         activityGroups[session.activity] = 0;
       }
@@ -214,7 +214,7 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, date }) => {
         </Svg>
       </View>
 
-      {sessions.length > 0 ? (
+      {chartSessions.length > 0 ? (
         <View style={styles.legend}>
           {renderLegend()}
         </View>

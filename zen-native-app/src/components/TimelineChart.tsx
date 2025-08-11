@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { Activity } from '../store/store';
+import { Activity, Session } from '../store/store';
 
 interface TimelineChartProps {
   activities: Activity[];
+  sessions: Session[];
   date: Date;
 }
 
@@ -11,7 +12,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const chartWidth = screenWidth - 40;
 const hourWidth = chartWidth / 24;
 
-export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, date }) => {
+export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, sessions, date }) => {
   const formatTime = (hour: number) => {
     return hour.toString().padStart(2, '0') + ':00';
   };
@@ -30,7 +31,7 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, date }
 
   const getSessionsForDate = () => {
     const targetDate = date.toDateString();
-    const sessions: Array<{
+    const chartSessions: Array<{
       activity: string;
       startHour: number;
       endHour: number;
@@ -38,21 +39,21 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, date }
       color: string;
     }> = [];
 
-    if (!activities || activities.length === 0) {
-      return sessions;
+    if (!sessions || sessions.length === 0 || !activities || activities.length === 0) {
+      return chartSessions;
     }
 
-    activities.forEach(activity => {
-      if (activity.sessions && activity.sessions.length > 0) {
-        activity.sessions.forEach(session => {
-        const sessionDate = new Date(session.startTime).toDateString();
-        if (sessionDate === targetDate && session.endTime) {
+    sessions.forEach(session => {
+      const sessionDate = new Date(session.startTime).toDateString();
+      if (sessionDate === targetDate && session.endTime) {
+        const activity = activities.find(a => a.id === session.activityId);
+        if (activity) {
           const startTime = new Date(session.startTime);
           const endTime = new Date(session.endTime);
           const startHour = startTime.getHours() + startTime.getMinutes() / 60;
           const endHour = endTime.getHours() + endTime.getMinutes() / 60;
           
-          sessions.push({
+          chartSessions.push({
             activity: activity.name,
             startHour,
             endHour,
@@ -60,16 +61,15 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, date }
             color: getActivityColor(activity.name)
           });
         }
-        });
       }
     });
 
-    return sessions.sort((a, b) => a.startHour - b.startHour);
+    return chartSessions.sort((a, b) => a.startHour - b.startHour);
   };
 
-  const sessions = getSessionsForDate();
+  const chartSessions = getSessionsForDate();
 
-  const assignTracks = (sessions: typeof sessions) => {
+  const assignTracks = (sessions: typeof chartSessions) => {
     const tracks: Array<Array<typeof sessions[0]>> = [];
     
     sessions.forEach(session => {
@@ -94,7 +94,7 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, date }
     return tracks;
   };
 
-  const tracks = assignTracks(sessions);
+  const tracks = assignTracks(chartSessions);
 
   return (
     <View style={styles.container}>

@@ -109,7 +109,7 @@ export default function ReportPage() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('Home')}
           style={styles.backButton}
         >
           <Text style={styles.backButtonText}>← Back</Text>
@@ -184,9 +184,9 @@ export default function ReportPage() {
 
             <View style={styles.chartContainer}>
               {chartView === 'timeline' ? (
-                <TimelineChart activities={activities} date={selectedDate} />
+                <TimelineChart activities={activities} sessions={sessions} date={selectedDate} />
               ) : (
-                <RingsChart activities={activities} date={selectedDate} />
+                <RingsChart activities={activities} sessions={sessions} date={selectedDate} />
               )}
             </View>
           </>
@@ -237,7 +237,7 @@ export default function ReportPage() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No activities recorded yet</Text>
             <TouchableOpacity
-              onPress={() => navigation.goBack()}
+              onPress={() => navigation.navigate('Home')}
               style={styles.startTrackingButton}
             >
               <Text style={styles.startTrackingText}>Start Tracking</Text>

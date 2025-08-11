@@ -9,6 +9,7 @@ export interface Activity {
   lastUsed: Date
   color?: string
   order?: number
+  sessions?: Session[]
 }
 
 export interface Session {
