@@ -12,6 +12,8 @@ import { useNavigation } from '@react-navigation/native'
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, addDays, subDays } from 'date-fns'
 import Svg, { Circle, Path, Text as SvgText, Line } from 'react-native-svg'
 import { useStore } from '../store/store'
+import { TimelineChart } from '../components/TimelineChart'
+import { RingsChart } from '../components/RingsChart'
 
 type TabType = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
@@ -22,6 +24,7 @@ export default function ReportPage() {
   const { sessions, activities } = useStore()
   const [activeTab, setActiveTab] = useState<TabType>('daily')
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [chartView, setChartView] = useState<'timeline' | 'rings'>('timeline')
   
   const now = selectedDate
 
@@ -137,27 +140,56 @@ export default function ReportPage() {
 
       <ScrollView style={styles.content}>
         {activeTab === 'daily' && (
-          <View style={styles.dateNavigation}>
-            <TouchableOpacity
-              onPress={() => setSelectedDate(subDays(selectedDate, 1))}
-              style={styles.dateNavButton}
-            >
-              <Text style={styles.dateNavText}>‹</Text>
-            </TouchableOpacity>
-            <Text style={styles.dateLabel}>
-              {format(selectedDate, 'yyyy. MM. dd')}
-            </Text>
-            <TouchableOpacity
-              onPress={() => setSelectedDate(addDays(selectedDate, 1))}
-              style={styles.dateNavButton}
-              disabled={format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')}
-            >
-              <Text style={[
-                styles.dateNavText,
-                format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && styles.disabledText
-              ]}>›</Text>
-            </TouchableOpacity>
-          </View>
+          <>
+            <View style={styles.dateNavigation}>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(subDays(selectedDate, 1))}
+                style={styles.dateNavButton}
+              >
+                <Text style={styles.dateNavText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateLabel}>
+                {format(selectedDate, 'yyyy. MM. dd')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(addDays(selectedDate, 1))}
+                style={styles.dateNavButton}
+                disabled={format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')}
+              >
+                <Text style={[
+                  styles.dateNavText,
+                  format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && styles.disabledText
+                ]}>›</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.chartToggle}>
+              <TouchableOpacity
+                onPress={() => setChartView('timeline')}
+                style={[styles.toggleButton, chartView === 'timeline' && styles.activeToggle]}
+              >
+                <Text style={[styles.toggleText, chartView === 'timeline' && styles.activeToggleText]}>
+                  Timeline
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setChartView('rings')}
+                style={[styles.toggleButton, chartView === 'rings' && styles.activeToggle]}
+              >
+                <Text style={[styles.toggleText, chartView === 'rings' && styles.activeToggleText]}>
+                  Rings
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.chartContainer}>
+              {chartView === 'timeline' ? (
+                <TimelineChart activities={activities} date={selectedDate} />
+              ) : (
+                <RingsChart activities={activities} date={selectedDate} />
+              )}
+            </View>
+          </>
         )}
 
         {activeTab !== 'daily' && (
@@ -374,5 +406,32 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '300',
+  },
+  chartToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    marginBottom: 16,
+    padding: 4,
+    borderRadius: 8,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  activeToggle: {
+    backgroundColor: 'black',
+  },
+  toggleText: {
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '300',
+    color: '#6B7280',
+  },
+  activeToggleText: {
+    color: 'white',
+  },
+  chartContainer: {
+    marginBottom: 24,
   },
 })
