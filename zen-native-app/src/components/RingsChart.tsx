@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import Svg, { Circle, Path, G } from 'react-native-svg';
+import Svg, { Circle, Path, G, Text as SvgText } from 'react-native-svg';
 import { Activity, Session } from '../store/store';
 
 interface RingsChartProps {
@@ -84,12 +84,13 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
     const markers = [];
     const outerRadius = center - 20;
     
-    for (let i = 0; i < 24; i++) {
-      const angle = (i * 15) - 90;
+    // Only show major hour markers (every 3 hours)
+    for (let i = 0; i < 24; i += 3) {
+      const angle = (i * 15) - 90; // 15 degrees per hour, start from top
       const angleRad = angle * Math.PI / 180;
       
-      const x1 = center + (outerRadius - 10) * Math.cos(angleRad);
-      const y1 = center + (outerRadius - 10) * Math.sin(angleRad);
+      const x1 = center + (outerRadius - 15) * Math.cos(angleRad);
+      const y1 = center + (outerRadius - 15) * Math.sin(angleRad);
       const x2 = center + outerRadius * Math.cos(angleRad);
       const y2 = center + outerRadius * Math.sin(angleRad);
       
@@ -97,29 +98,30 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
         <Path
           key={i}
           d={`M ${x1} ${y1} L ${x2} ${y2}`}
-          stroke="#ddd"
-          strokeWidth={i % 6 === 0 ? 2 : 1}
+          stroke="#333"
+          strokeWidth={2}
         />
       );
       
-      if (i % 6 === 0) {
-        const textX = center + (outerRadius - 25) * Math.cos(angleRad);
-        const textY = center + (outerRadius - 25) * Math.sin(angleRad);
-        
-        markers.push(
-          <G key={`text-${i}`}>
-            <Text
-              x={textX}
-              y={textY + 4}
-              fontSize="12"
-              fill="#666"
-              textAnchor="middle"
-            >
-              {i.toString().padStart(2, '0')}
-            </Text>
-          </G>
-        );
-      }
+      // Position text outside the circle
+      const textRadius = outerRadius + 20;
+      const textX = center + textRadius * Math.cos(angleRad);
+      const textY = center + textRadius * Math.sin(angleRad);
+      
+      markers.push(
+        <G key={`text-${i}`}>
+          <SvgText
+            x={textX}
+            y={textY + 4}
+            fontSize="12"
+            fill="#333"
+            textAnchor="middle"
+            fontWeight="500"
+          >
+            {i.toString().padStart(2, '0')}
+          </SvgText>
+        </G>
+      );
     }
     
     return markers;
@@ -208,7 +210,7 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
       <Text style={styles.title}>Rings View</Text>
       
       <View style={styles.chartContainer}>
-        <Svg width={chartSize} height={chartSize}>
+        <Svg width={chartSize + 60} height={chartSize + 60} viewBox={`-30 -30 ${chartSize + 60} ${chartSize + 60}`}>
           {renderHourMarkers()}
           {renderActivityRings()}
         </Svg>

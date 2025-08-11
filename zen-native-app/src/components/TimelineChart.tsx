@@ -102,9 +102,11 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, sessio
       
       <View style={styles.timeAxis}>
         {Array.from({ length: 25 }, (_, i) => (
-          <View key={i} style={styles.hourMark}>
-            <Text style={styles.hourText}>{i % 6 === 0 ? formatTime(i) : ''}</Text>
-            <View style={[styles.hourLine, { opacity: i % 6 === 0 ? 1 : 0.3 }]} />
+          <View key={i} style={[styles.hourMark, { width: hourWidth }]}>
+            {i % 4 === 0 && (
+              <Text style={styles.hourText}>{formatTime(i)}</Text>
+            )}
+            <View style={[styles.hourLine, { opacity: i % 2 === 0 ? 1 : 0.3 }]} />
           </View>
         ))}
       </View>
@@ -169,8 +171,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   hourMark: {
-    width: hourWidth,
     alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   hourText: {
     fontSize: 10,
