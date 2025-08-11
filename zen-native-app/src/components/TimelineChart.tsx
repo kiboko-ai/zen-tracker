@@ -19,8 +19,8 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, sessio
 
   const getActivityColor = (activityName: string) => {
     const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-      '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43'
+      '#000000', '#333333', '#666666', '#999999', '#CCCCCC',
+      '#1A1A1A', '#4D4D4D', '#737373', '#A6A6A6', '#D9D9D9'
     ];
     let hash = 0;
     for (let i = 0; i < activityName.length; i++) {
@@ -126,7 +126,16 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, sessio
                   }
                 ]}
               >
-                <Text style={styles.sessionText} numberOfLines={1}>
+                <Text 
+                  style={[
+                    styles.sessionText, 
+                    { 
+                      color: session.color === '#CCCCCC' || session.color === '#A6A6A6' || session.color === '#D9D9D9' 
+                        ? '#000' : '#fff' 
+                    }
+                  ]} 
+                  numberOfLines={1}
+                >
                   {session.activity}
                 </Text>
               </View>
@@ -203,7 +212,6 @@ const styles = StyleSheet.create({
     minWidth: 2,
   },
   sessionText: {
-    color: 'white',
     fontSize: 10,
     fontWeight: '500',
     textAlign: 'center',

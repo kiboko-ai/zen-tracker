@@ -16,8 +16,8 @@ const center = chartSize / 2;
 export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, date }) => {
   const getActivityColor = (activityName: string) => {
     const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-      '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43'
+      '#000000', '#333333', '#666666', '#999999', '#CCCCCC',
+      '#1A1A1A', '#4D4D4D', '#737373', '#A6A6A6', '#D9D9D9'
     ];
     let hash = 0;
     for (let i = 0; i < activityName.length; i++) {
