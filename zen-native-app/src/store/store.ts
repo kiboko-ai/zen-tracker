@@ -54,7 +54,7 @@ export const useStore = create<AppState>()(
       
       addActivity: (name) => {
         const newActivity: Activity = {
-          id: Date.now().toString(),
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           name,
           totalTime: 0,
           lastUsed: new Date(),
