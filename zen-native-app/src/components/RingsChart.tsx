@@ -10,7 +10,7 @@ interface RingsChartProps {
 }
 
 const { width: screenWidth } = Dimensions.get('window');
-const chartSize = Math.min(screenWidth - 100, 280); // 여백을 더 크게 확보
+const chartSize = Math.min(screenWidth - 60, 320); // 차트 크기 증가
 const center = chartSize / 2;
 
 export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, date }) => {
@@ -82,15 +82,15 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
 
   const renderHourMarkers = () => {
     const markers = [];
-    const outerRadius = center - 10;
+    const outerRadius = center - 30; // 시간 표시를 더 안쪽으로
     
     // Only show major hour markers (every 3 hours)
     for (let i = 0; i < 24; i += 3) {
       const angle = (i * 15) - 90; // 15 degrees per hour, start from top
       const angleRad = angle * Math.PI / 180;
       
-      const x1 = center + (outerRadius - 10) * Math.cos(angleRad);
-      const y1 = center + (outerRadius - 10) * Math.sin(angleRad);
+      const x1 = center + (outerRadius - 8) * Math.cos(angleRad);
+      const y1 = center + (outerRadius - 8) * Math.sin(angleRad);
       const x2 = center + outerRadius * Math.cos(angleRad);
       const y2 = center + outerRadius * Math.sin(angleRad);
       
@@ -98,26 +98,25 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
         <Path
           key={i}
           d={`M ${x1} ${y1} L ${x2} ${y2}`}
-          stroke="#333"
-          strokeWidth={1.5}
+          stroke="#666"
+          strokeWidth={1}
         />
       );
       
-      // Position text outside the circle - adjusted for smaller screens
-      const textRadius = outerRadius + 15;
+      // Position text with more spacing
+      const textRadius = outerRadius + 20; // 더 많은 여백
       const textX = center + textRadius * Math.cos(angleRad);
       const textY = center + textRadius * Math.sin(angleRad);
       
-      // Smaller font size for better fit
       markers.push(
         <G key={`text-${i}`}>
           <SvgText
             x={textX}
-            y={textY + 3}
-            fontSize="10"
-            fill="#333"
+            y={textY + 2}
+            fontSize="9"
+            fill="#666"
             textAnchor="middle"
-            fontWeight="500"
+            fontWeight="400"
           >
             {i.toString().padStart(2, '0')}
           </SvgText>
@@ -140,8 +139,8 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
 
     const rings = [];
     const activities_list = Object.keys(activityGroups);
-    const ringWidth = 12;
-    const startRadius = 50;
+    const ringWidth = 20; // 링 너비 더 증가
+    const startRadius = 80; // 시작 반지름 더 증가 (도넛 원 크게)
 
     activities_list.forEach((activityName, ringIndex) => {
       const radius = startRadius + ringIndex * (ringWidth + 5);
@@ -211,7 +210,7 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
       <Text style={styles.title}>Rings View</Text>
       
       <View style={styles.chartContainer}>
-        <Svg width={chartSize + 40} height={chartSize + 40} viewBox={`-20 -20 ${chartSize + 40} ${chartSize + 40}`}>
+        <Svg width={chartSize + 50} height={chartSize + 50} viewBox={`-25 -25 ${chartSize + 50} ${chartSize + 50}`}>
           {renderHourMarkers()}
           {renderActivityRings()}
         </Svg>
