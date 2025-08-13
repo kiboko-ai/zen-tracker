@@ -7,11 +7,14 @@ import {
   TextInput,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { AnimatedCircularProgress } from 'react-native-circular-progress'
+import { Picker } from '@react-native-picker/picker'
+import Slider from '@react-native-community/slider'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 
@@ -35,6 +38,7 @@ export default function TimerPage() {
   const [targetMinutes, setTargetMinutes] = useState(30)
   const [showTargetPicker, setShowTargetPicker] = useState(true)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [useSlider, setUseSlider] = useState(false)
   
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
@@ -165,29 +169,131 @@ export default function TimerPage() {
         {showTargetPicker && !isRunning ? (
           <View style={styles.targetPicker}>
             <Text style={styles.targetLabel}>Set your target time</Text>
-            <View style={styles.timeInputContainer}>
-              <View style={styles.timeInputGroup}>
-                <TextInput
-                  value={targetHours.toString()}
-                  onChangeText={(text) => setTargetHours(Math.max(0, Math.min(23, parseInt(text) || 0)))}
-                  style={styles.timeInput}
-                  keyboardType="numeric"
-                  maxLength={2}
-                />
-                <Text style={styles.timeLabel}>hours</Text>
+            
+            {Platform.OS === 'ios' ? (
+              useSlider ? (
+                // Slider-based UI
+                <View style={styles.sliderContainer}>
+                  <View style={styles.timeDisplay}>
+                    <Text style={styles.timeDisplayText}>
+                      {targetHours}h {targetMinutes}m
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.sliderGroup}>
+                    <Text style={styles.sliderLabel}>Hours</Text>
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={0}
+                      maximumValue={23}
+                      step={1}
+                      value={targetHours}
+                      onValueChange={setTargetHours}
+                      minimumTrackTintColor="#000"
+                      maximumTrackTintColor="#E5E7EB"
+                      thumbTintColor="#000"
+                    />
+                    <View style={styles.sliderValues}>
+                      <Text style={styles.sliderValueText}>0</Text>
+                      <Text style={styles.sliderValueText}>{targetHours}</Text>
+                      <Text style={styles.sliderValueText}>23</Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.sliderGroup}>
+                    <Text style={styles.sliderLabel}>Minutes</Text>
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={0}
+                      maximumValue={59}
+                      step={5}
+                      value={targetMinutes}
+                      onValueChange={(value) => setTargetMinutes(Math.round(value / 5) * 5)}
+                      minimumTrackTintColor="#000"
+                      maximumTrackTintColor="#E5E7EB"
+                      thumbTintColor="#000"
+                    />
+                    <View style={styles.sliderValues}>
+                      <Text style={styles.sliderValueText}>0</Text>
+                      <Text style={styles.sliderValueText}>{targetMinutes}</Text>
+                      <Text style={styles.sliderValueText}>59</Text>
+                    </View>
+                  </View>
+                  
+                  <TouchableOpacity
+                    onPress={() => setUseSlider(false)}
+                    style={styles.switchModeButton}
+                  >
+                    <Text style={styles.switchModeText}>Switch to scroll picker</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                // Picker-based UI (iOS timer style)
+                <View>
+                  <View style={styles.pickerContainer}>
+                    <View style={styles.pickerWrapper}>
+                      <Picker
+                        selectedValue={targetHours}
+                        onValueChange={(value) => setTargetHours(value)}
+                        style={styles.picker}
+                        itemStyle={styles.pickerItem}
+                      >
+                        {[...Array(24)].map((_, i) => (
+                          <Picker.Item key={i} label={`${i}h`} value={i} />
+                        ))}
+                      </Picker>
+                    </View>
+                    
+                    <Text style={styles.pickerSeparator}>:</Text>
+                    
+                    <View style={styles.pickerWrapper}>
+                      <Picker
+                        selectedValue={targetMinutes}
+                        onValueChange={(value) => setTargetMinutes(value)}
+                        style={styles.picker}
+                        itemStyle={styles.pickerItem}
+                      >
+                        {[...Array(60)].map((_, i) => (
+                          <Picker.Item key={i} label={`${i}m`} value={i} />
+                        ))}
+                      </Picker>
+                    </View>
+                  </View>
+                  
+                  <TouchableOpacity
+                    onPress={() => setUseSlider(true)}
+                    style={styles.switchModeButton}
+                  >
+                    <Text style={styles.switchModeText}>Switch to slider</Text>
+                  </TouchableOpacity>
+                </View>
+              )
+            ) : (
+              // Android fallback to original input
+              <View style={styles.timeInputContainer}>
+                <View style={styles.timeInputGroup}>
+                  <TextInput
+                    value={targetHours.toString()}
+                    onChangeText={(text) => setTargetHours(Math.max(0, Math.min(23, parseInt(text) || 0)))}
+                    style={styles.timeInput}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                  <Text style={styles.timeLabel}>hours</Text>
+                </View>
+                <Text style={styles.timeSeparator}>:</Text>
+                <View style={styles.timeInputGroup}>
+                  <TextInput
+                    value={targetMinutes.toString()}
+                    onChangeText={(text) => setTargetMinutes(Math.max(0, Math.min(59, parseInt(text) || 0)))}
+                    style={styles.timeInput}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                  <Text style={styles.timeLabel}>minutes</Text>
+                </View>
               </View>
-              <Text style={styles.timeSeparator}>:</Text>
-              <View style={styles.timeInputGroup}>
-                <TextInput
-                  value={targetMinutes.toString()}
-                  onChangeText={(text) => setTargetMinutes(Math.max(0, Math.min(59, parseInt(text) || 0)))}
-                  style={styles.timeInput}
-                  keyboardType="numeric"
-                  maxLength={2}
-                />
-                <Text style={styles.timeLabel}>minutes</Text>
-              </View>
-            </View>
+            )}
             
             <TouchableOpacity
               onPress={handleStart}
@@ -347,6 +453,45 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginHorizontal: 16,
   },
+  pickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 30,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  pickerWrapper: {
+    width: 90,
+    height: 200,
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
+  picker: {
+    width: 90,
+    height: 200,
+  },
+  pickerItem: {
+    fontSize: 24,
+    height: 200,
+    color: '#111827',
+    fontWeight: '300',
+  },
+  pickerSeparator: {
+    fontSize: 28,
+    fontWeight: '200',
+    marginHorizontal: 8,
+    color: '#111827',
+  },
   startButton: {
     width: '100%',
     paddingVertical: 16,
@@ -440,5 +585,56 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     backgroundColor: 'black',
+  },
+  sliderContainer: {
+    width: '100%',
+    paddingVertical: 20,
+  },
+  timeDisplay: {
+    alignItems: 'center',
+    marginBottom: 30,
+    paddingVertical: 20,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+  },
+  timeDisplayText: {
+    fontSize: 36,
+    fontWeight: '200',
+    color: '#111827',
+  },
+  sliderGroup: {
+    marginBottom: 24,
+  },
+  sliderLabel: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderValues: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  sliderValueText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '300',
+  },
+  switchModeButton: {
+    alignSelf: 'center',
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  switchModeText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '300',
+    textDecorationLine: 'underline',
   },
 })
