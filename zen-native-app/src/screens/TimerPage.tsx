@@ -34,8 +34,8 @@ export default function TimerPage() {
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [targetHours, setTargetHours] = useState(-1)
-  const [targetMinutes, setTargetMinutes] = useState(-1)
+  const [targetHours, setTargetHours] = useState(0)
+  const [targetMinutes, setTargetMinutes] = useState(0)
   const [showTargetPicker, setShowTargetPicker] = useState(true)
   const [showSuccess, setShowSuccess] = useState(false)
   const [useSlider, setUseSlider] = useState(false)
@@ -43,7 +43,7 @@ export default function TimerPage() {
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
   const intervalRef = useRef<NodeJS.Timeout>()
-  const targetSeconds = (targetHours >= 0 ? targetHours : 0) * 3600 + (targetMinutes >= 0 ? targetMinutes : 0) * 60
+  const targetSeconds = targetHours * 3600 + targetMinutes * 60
 
   useEffect(() => {
     if (isRunning && !isPaused) {
@@ -176,7 +176,7 @@ export default function TimerPage() {
                 <View style={styles.sliderContainer}>
                   <View style={styles.timeDisplay}>
                     <Text style={styles.timeDisplayText}>
-                      {targetHours >= 0 ? targetHours : 0}h {targetMinutes >= 0 ? targetMinutes : 0}m
+                      {targetHours}h {targetMinutes}m
                     </Text>
                   </View>
                   
@@ -187,7 +187,7 @@ export default function TimerPage() {
                       minimumValue={0}
                       maximumValue={23}
                       step={1}
-                      value={targetHours >= 0 ? targetHours : 0}
+                      value={targetHours}
                       onValueChange={setTargetHours}
                       minimumTrackTintColor="#000"
                       maximumTrackTintColor="#E5E7EB"
@@ -195,7 +195,7 @@ export default function TimerPage() {
                     />
                     <View style={styles.sliderValues}>
                       <Text style={styles.sliderValueText}>0</Text>
-                      <Text style={styles.sliderValueText}>{targetHours >= 0 ? targetHours : 0}</Text>
+                      <Text style={styles.sliderValueText}>{targetHours}</Text>
                       <Text style={styles.sliderValueText}>23</Text>
                     </View>
                   </View>
@@ -207,7 +207,7 @@ export default function TimerPage() {
                       minimumValue={0}
                       maximumValue={59}
                       step={5}
-                      value={targetMinutes >= 0 ? targetMinutes : 0}
+                      value={targetMinutes}
                       onValueChange={(value) => setTargetMinutes(Math.round(value / 5) * 5)}
                       minimumTrackTintColor="#000"
                       maximumTrackTintColor="#E5E7EB"
@@ -215,7 +215,7 @@ export default function TimerPage() {
                     />
                     <View style={styles.sliderValues}>
                       <Text style={styles.sliderValueText}>0</Text>
-                      <Text style={styles.sliderValueText}>{targetMinutes >= 0 ? targetMinutes : 0}</Text>
+                      <Text style={styles.sliderValueText}>{targetMinutes}</Text>
                       <Text style={styles.sliderValueText}>59</Text>
                     </View>
                   </View>
@@ -238,7 +238,6 @@ export default function TimerPage() {
                         style={styles.picker}
                         itemStyle={styles.pickerItem}
                       >
-                        <Picker.Item label="..." value={-1} />
                         {[...Array(24)].map((_, i) => (
                           <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
                         ))}
@@ -254,7 +253,6 @@ export default function TimerPage() {
                         style={styles.picker}
                         itemStyle={styles.pickerItem}
                       >
-                        <Picker.Item label="..." value={-1} />
                         {[...Array(60)].map((_, i) => (
                           <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
                         ))}
