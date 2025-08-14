@@ -268,22 +268,40 @@ export default function HomePage() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={styles.modalContent}>
-            <TextInput
-              value={newActivityName}
-              onChangeText={setNewActivityName}
-              placeholder="name your Zen"
-              style={styles.modalInput}
-              autoFocus
-              onSubmitEditing={handleSaveNewActivity}
-            />
-            <TouchableOpacity
-              onPress={handleSaveNewActivity}
-              style={styles.modalButton}
-            >
-              <Text style={styles.modalButtonText}>Add</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity 
+            style={styles.modalOverlay} 
+            activeOpacity={1} 
+            onPress={() => {
+              setShowAddModal(false)
+              setNewActivityName('')
+            }}
+          >
+            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => {
+                  setShowAddModal(false)
+                  setNewActivityName('')
+                }}
+              >
+                <Text style={styles.modalCloseText}>×</Text>
+              </TouchableOpacity>
+              <TextInput
+                value={newActivityName}
+                onChangeText={setNewActivityName}
+                placeholder="name your Zen"
+                style={styles.modalInput}
+                autoFocus
+                onSubmitEditing={handleSaveNewActivity}
+              />
+              <TouchableOpacity
+                onPress={handleSaveNewActivity}
+                style={styles.modalButton}
+              >
+                <Text style={styles.modalButtonText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
         </KeyboardAvoidingView>
       )}
     </SafeAreaView>
@@ -449,6 +467,24 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     width: '80%',
+    position: 'relative',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  modalCloseText: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#6B7280',
+    lineHeight: 24,
   },
   modalInput: {
     borderWidth: 1,
@@ -457,6 +493,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     marginBottom: 16,
+    marginTop: 20,
   },
   modalButton: {
     backgroundColor: 'black',
