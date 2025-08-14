@@ -8,6 +8,8 @@ import {
   Animated,
   Dimensions,
   Platform,
+  AppState,
+  AppStateStatus,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
@@ -17,6 +19,7 @@ import { Picker } from '@react-native-picker/picker'
 import Slider from '@react-native-community/slider'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
+import BackgroundTimer from '../services/BackgroundTimer'
 
 type TimerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Timer'>
 type TimerScreenRouteProp = RouteProp<RootStackParamList, 'Timer'>
@@ -42,33 +45,43 @@ export default function TimerPage() {
   
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
-  const intervalRef = useRef<NodeJS.Timeout>()
+  const intervalRef = useRef<string | null>(null)
+  const startTimeRef = useRef<Date | null>(null)
+  const pausedDurationRef = useRef<number>(0)
+  const pauseStartRef = useRef<Date | null>(null)
   const targetSeconds = targetHours * 3600 + targetMinutes * 60
 
   useEffect(() => {
-    if (isRunning && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        setSeconds(prev => {
-          const newSeconds = prev + 1
-          if (newSeconds === targetSeconds && targetSeconds > 0) {
+    if (isRunning && !isPaused && startTimeRef.current) {
+      // Use BackgroundTimer for accurate time tracking
+      const id = BackgroundTimer.setBackgroundInterval(() => {
+        if (startTimeRef.current) {
+          const elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+          setSeconds(elapsed)
+          
+          if (elapsed === targetSeconds && targetSeconds > 0) {
             setShowSuccess(true)
             setTimeout(() => setShowSuccess(false), 5000)
           }
-          return newSeconds
-        })
+        }
       }, 1000)
+      
+      intervalRef.current = id
     } else {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current)
+        BackgroundTimer.clearBackgroundInterval(intervalRef.current)
+        intervalRef.current = null
       }
     }
     
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current)
+        BackgroundTimer.clearBackgroundInterval(intervalRef.current)
+        intervalRef.current = null
       }
     }
   }, [isRunning, isPaused, targetSeconds])
+
 
   useEffect(() => {
     Animated.parallel([
@@ -88,17 +101,25 @@ export default function TimerPage() {
   const handleStart = () => {
     const targetDuration = targetSeconds > 0 ? targetSeconds * 1000 : undefined
     startSession(activityId, targetDuration)
+    startTimeRef.current = new Date()
+    pausedDurationRef.current = 0
     setIsRunning(true)
     setShowTargetPicker(false)
   }
 
   const handlePause = () => {
     pauseSession()
+    pauseStartRef.current = new Date()
     setIsPaused(true)
   }
 
   const handleResume = () => {
     resumeSession()
+    if (pauseStartRef.current) {
+      const pauseDuration = Math.floor((new Date().getTime() - pauseStartRef.current.getTime()) / 1000)
+      pausedDurationRef.current += pauseDuration
+      pauseStartRef.current = null
+    }
     setIsPaused(false)
   }
 
