@@ -183,7 +183,6 @@ export default function HomePage() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{format(currentTime, 'HH:mm')}</Text>
           <Text style={styles.dateText}>{format(currentTime, 'yyyy. MM. dd')}</Text>
         </View>
         <TouchableOpacity
@@ -330,10 +329,9 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   dateText: {
-    fontSize: 14,
-    fontWeight: '200',
+    fontSize: 16,
+    fontWeight: '300',
     color: '#6B7280',
-    marginTop: 4,
   },
   reportButton: {
     padding: 8,
