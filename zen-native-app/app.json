@@ -1,9 +1,12 @@
 {
   "expo": {
-    "name": "Zen App",
+    "name": "Zen Tracker",
     "slug": "zen-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "locales": {
+      "en": "./locales/en.json"
+    },
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
