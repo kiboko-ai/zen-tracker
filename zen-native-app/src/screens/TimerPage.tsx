@@ -16,7 +16,6 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { AnimatedCircularProgress } from 'react-native-circular-progress'
 import { Picker } from '@react-native-picker/picker'
-import Slider from '@react-native-community/slider'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 import BackgroundTimer from '../services/BackgroundTimer'
@@ -31,17 +30,16 @@ export default function TimerPage() {
   const route = useRoute<TimerScreenRouteProp>()
   const activityId = route.params.id
   
-  const { activities, startSession, pauseSession, resumeSession, endSession, currentSession } = useStore()
+  const { activities, startSession, pauseSession, resumeSession, endSession, currentSession, updateActivity } = useStore()
   const activity = activities.find(a => a.id === activityId)
   
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [targetHours, setTargetHours] = useState(0)
-  const [targetMinutes, setTargetMinutes] = useState(0)
+  const [targetHours, setTargetHours] = useState(activity?.lastTargetHours || 0)
+  const [targetMinutes, setTargetMinutes] = useState(activity?.lastTargetMinutes || 0)
   const [showTargetPicker, setShowTargetPicker] = useState(true)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [useSlider, setUseSlider] = useState(false)
   
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
@@ -101,6 +99,7 @@ export default function TimerPage() {
   const handleStart = () => {
     const targetDuration = targetSeconds > 0 ? targetSeconds * 1000 : undefined
     startSession(activityId, targetDuration)
+    updateActivity(activityId, { lastTargetHours: targetHours, lastTargetMinutes: targetMinutes })
     startTimeRef.current = new Date()
     pausedDurationRef.current = 0
     setIsRunning(true)
@@ -192,103 +191,38 @@ export default function TimerPage() {
             <Text style={styles.targetLabel}>Set your target time</Text>
             
             {Platform.OS === 'ios' ? (
-              useSlider ? (
-                // Slider-based UI
-                <View style={styles.sliderContainer}>
-                  <View style={styles.timeDisplay}>
-                    <Text style={styles.timeDisplayText}>
-                      {targetHours}h {targetMinutes}m
-                    </Text>
+              // Picker-based UI (iOS timer style)
+              <View>
+                <View style={styles.pickerContainer}>
+                  <View style={styles.pickerWrapper}>
+                    <Picker
+                      selectedValue={targetHours}
+                      onValueChange={(value) => setTargetHours(value)}
+                      style={styles.picker}
+                      itemStyle={styles.pickerItem}
+                    >
+                      {[...Array(24)].map((_, i) => (
+                        <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
+                      ))}
+                    </Picker>
                   </View>
                   
-                  <View style={styles.sliderGroup}>
-                    <Text style={styles.sliderLabel}>Hours</Text>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={0}
-                      maximumValue={23}
-                      step={1}
-                      value={targetHours}
-                      onValueChange={setTargetHours}
-                      minimumTrackTintColor="#000"
-                      maximumTrackTintColor="#E5E7EB"
-                      thumbTintColor="#000"
-                    />
-                    <View style={styles.sliderValues}>
-                      <Text style={styles.sliderValueText}>0</Text>
-                      <Text style={styles.sliderValueText}>{targetHours}</Text>
-                      <Text style={styles.sliderValueText}>23</Text>
-                    </View>
-                  </View>
+                  <Text style={styles.pickerSeparator}>:</Text>
                   
-                  <View style={styles.sliderGroup}>
-                    <Text style={styles.sliderLabel}>Minutes</Text>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={0}
-                      maximumValue={59}
-                      step={5}
-                      value={targetMinutes}
-                      onValueChange={(value) => setTargetMinutes(Math.round(value / 5) * 5)}
-                      minimumTrackTintColor="#000"
-                      maximumTrackTintColor="#E5E7EB"
-                      thumbTintColor="#000"
-                    />
-                    <View style={styles.sliderValues}>
-                      <Text style={styles.sliderValueText}>0</Text>
-                      <Text style={styles.sliderValueText}>{targetMinutes}</Text>
-                      <Text style={styles.sliderValueText}>59</Text>
-                    </View>
+                  <View style={styles.pickerWrapper}>
+                    <Picker
+                      selectedValue={targetMinutes}
+                      onValueChange={(value) => setTargetMinutes(value)}
+                      style={styles.picker}
+                      itemStyle={styles.pickerItem}
+                    >
+                      {[...Array(60)].map((_, i) => (
+                        <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
+                      ))}
+                    </Picker>
                   </View>
-                  
-                  <TouchableOpacity
-                    onPress={() => setUseSlider(false)}
-                    style={styles.switchModeButton}
-                  >
-                    <Text style={styles.switchModeText}>Switch to scroll picker</Text>
-                  </TouchableOpacity>
                 </View>
-              ) : (
-                // Picker-based UI (iOS timer style)
-                <View>
-                  <View style={styles.pickerContainer}>
-                    <View style={styles.pickerWrapper}>
-                      <Picker
-                        selectedValue={targetHours}
-                        onValueChange={(value) => setTargetHours(value)}
-                        style={styles.picker}
-                        itemStyle={styles.pickerItem}
-                      >
-                        {[...Array(24)].map((_, i) => (
-                          <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
-                        ))}
-                      </Picker>
-                    </View>
-                    
-                    <Text style={styles.pickerSeparator}>:</Text>
-                    
-                    <View style={styles.pickerWrapper}>
-                      <Picker
-                        selectedValue={targetMinutes}
-                        onValueChange={(value) => setTargetMinutes(value)}
-                        style={styles.picker}
-                        itemStyle={styles.pickerItem}
-                      >
-                        {[...Array(60)].map((_, i) => (
-                          <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                  
-                  <TouchableOpacity
-                    onPress={() => setUseSlider(true)}
-                    style={styles.switchModeButton}
-                  >
-                    <Text style={styles.switchModeText}>Switch to slider</Text>
-                  </TouchableOpacity>
-                </View>
-              )
+              </View>
             ) : (
               // Android fallback to original input
               <View style={styles.timeInputContainer}>
@@ -606,57 +540,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     backgroundColor: 'black',
-  },
-  sliderContainer: {
-    width: '100%',
-    paddingVertical: 20,
-  },
-  timeDisplay: {
-    alignItems: 'center',
-    marginBottom: 30,
-    paddingVertical: 20,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-  },
-  timeDisplayText: {
-    fontSize: 36,
-    fontWeight: '200',
-    color: '#111827',
-  },
-  sliderGroup: {
-    marginBottom: 24,
-  },
-  sliderLabel: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#6B7280',
-    marginBottom: 12,
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  sliderValues: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  sliderValueText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    fontWeight: '300',
-  },
-  switchModeButton: {
-    alignSelf: 'center',
-    marginTop: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  switchModeText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '300',
-    textDecorationLine: 'underline',
   },
   pickerColumn: {
     alignItems: 'center',

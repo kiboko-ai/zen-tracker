@@ -10,6 +10,8 @@ export interface Activity {
   color?: string
   order?: number
   sessions?: Session[]
+  lastTargetHours?: number
+  lastTargetMinutes?: number
 }
 
 export interface Session {
