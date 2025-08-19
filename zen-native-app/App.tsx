@@ -20,13 +20,17 @@ const Stack = createStackNavigator<RootStackParamList>()
 
 export default function App() {
   const isFirstTime = useStore(state => state.isFirstTime)
+  const activities = useStore(state => state.activities)
+  
+  // If there are existing activities, skip onboarding regardless of isFirstTime flag
+  const shouldShowOnboarding = isFirstTime && activities.length === 0
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <NavigationContainer>
           <Stack.Navigator
-            initialRouteName={isFirstTime ? "Onboarding" : "Home"}
+            initialRouteName={shouldShowOnboarding ? "Onboarding" : "Home"}
             screenOptions={{
               headerShown: false,
               cardStyleInterpolator: ({ current: { progress } }) => ({
