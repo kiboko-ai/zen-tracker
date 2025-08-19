@@ -6,7 +6,8 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(npm install)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
