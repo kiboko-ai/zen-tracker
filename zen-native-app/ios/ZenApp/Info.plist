@@ -63,15 +63,5 @@
     <false/>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
-    <key>UIBackgroundModes</key>
-    <array>
-      <string>audio</string>
-      <string>fetch</string>
-    </array>
-    <key>BGTaskSchedulerPermittedIdentifiers</key>
-    <array>
-      <string>com.anonymous.zenapp.refresh</string>
-      <string>com.anonymous.zenapp.processing</string>
-    </array>
   </dict>
 </plist>
