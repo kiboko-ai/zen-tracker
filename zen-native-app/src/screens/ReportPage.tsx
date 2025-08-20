@@ -489,14 +489,30 @@ export default function ReportPage() {
         {stats.activityStats.length > 0 ? (
           <View style={styles.activitiesSection}>
             {stats.activityStats.map((stat) => (
-              <View key={stat.id} style={styles.activityItem}>
-                <View style={styles.activityInfo}>
-                  <View style={[styles.activityDot, { backgroundColor: getActivityColor(stat.id, activities) }]} />
-                  <Text style={styles.activityName}>{stat.name}</Text>
+              <View key={stat.id} style={styles.activityBarItem}>
+                <View style={styles.activityBarHeader}>
+                  <View style={styles.activityInfo}>
+                    <View style={[styles.activityDot, { backgroundColor: getActivityColor(stat.id, activities) }]} />
+                    <Text style={styles.activityName}>{stat.name}</Text>
+                  </View>
+                  <Text style={styles.activityTime}>
+                    {formatDuration(stat.totalTime)} / {formatDuration(stat.avgTime)}
+                  </Text>
                 </View>
-                <Text style={styles.activityTime}>
-                  {formatDuration(stat.totalTime)} / {formatDuration(stat.avgTime)}
-                </Text>
+                <View style={styles.barContainer}>
+                  <View style={styles.barBackground}>
+                    <View 
+                      style={[
+                        styles.barFill, 
+                        { 
+                          width: `${stat.percentage}%`,
+                          backgroundColor: getActivityColor(stat.id, activities)
+                        }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.percentageText}>{stat.percentage.toFixed(0)}%</Text>
+                </View>
               </View>
             ))}
           </View>
@@ -722,5 +738,40 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '300',
     color: '#9CA3AF',
+  },
+  activityBarItem: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  activityBarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  barContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  barBackground: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  percentageText: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#6B7280',
+    minWidth: 30,
+    textAlign: 'right',
   },
 })
