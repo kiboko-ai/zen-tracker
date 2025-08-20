@@ -222,7 +222,11 @@ export default function TimerPage() {
                       itemStyle={styles.pickerItem}
                     >
                       {[...Array(60)].map((_, i) => (
-                        <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
+                        <Picker.Item 
+                          key={i} 
+                          label={targetHours === 0 && i === 0 ? '∞' : i.toString().padStart(2, '0')} 
+                          value={i} 
+                        />
                       ))}
                     </Picker>
                   </View>
@@ -244,8 +248,14 @@ export default function TimerPage() {
                 <Text style={styles.timeSeparator}>:</Text>
                 <View style={styles.timeInputGroup}>
                   <TextInput
-                    value={targetMinutes.toString()}
-                    onChangeText={(text) => setTargetMinutes(Math.max(0, Math.min(59, parseInt(text) || 0)))}
+                    value={targetHours === 0 && targetMinutes === 0 ? '∞' : targetMinutes.toString()}
+                    onChangeText={(text) => {
+                      if (text === '∞') {
+                        setTargetMinutes(0)
+                      } else {
+                        setTargetMinutes(Math.max(0, Math.min(59, parseInt(text) || 0)))
+                      }
+                    }}
                     style={styles.timeInput}
                     keyboardType="numeric"
                     maxLength={2}

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import { Activity, Session } from '../store/store';
+import { getActivityColor } from '../utils/activityColors';
 
 interface TimelineChartProps {
   activities: Activity[];
@@ -50,17 +51,6 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, sessio
     return hour.toString().padStart(2, '0') + ':00';
   };
 
-  const getActivityColor = (activityName: string) => {
-    const colors = [
-      '#000000', '#333333', '#666666', '#999999', '#CCCCCC',
-      '#1A1A1A', '#4D4D4D', '#737373', '#A6A6A6', '#D9D9D9'
-    ];
-    let hash = 0;
-    for (let i = 0; i < activityName.length; i++) {
-      hash = activityName.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
-  };
 
   const getSessionsForDate = () => {
     const targetDate = date.toDateString();
@@ -91,7 +81,7 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, sessio
             startHour,
             endHour,
             duration: endHour - startHour,
-            color: getActivityColor(activity.name)
+            color: getActivityColor(activity.id, activities)
           });
         }
       }

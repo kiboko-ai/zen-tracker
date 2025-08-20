@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Circle, Path, G, Text as SvgText } from 'react-native-svg';
 import { Activity, Session } from '../store/store';
+import { getActivityColor } from '../utils/activityColors';
 
 interface RingsChartProps {
   activities: Activity[];
@@ -14,21 +15,11 @@ const chartSize = Math.min(screenWidth - 60, 320); // 차트 크기 증가
 const center = chartSize / 2;
 
 export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, date }) => {
-  const getActivityColor = (activityName: string) => {
-    const colors = [
-      '#000000', '#333333', '#666666', '#999999', '#CCCCCC',
-      '#1A1A1A', '#4D4D4D', '#737373', '#A6A6A6', '#D9D9D9'
-    ];
-    let hash = 0;
-    for (let i = 0; i < activityName.length; i++) {
-      hash = activityName.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
-  };
 
   const getSessionsForDate = () => {
     const targetDate = date.toDateString();
     const chartSessions: Array<{
+      activityId: string;
       activity: string;
       startHour: number;
       endHour: number;
@@ -51,11 +42,12 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
           const endHour = endTime.getHours() + endTime.getMinutes() / 60;
           
           chartSessions.push({
+            activityId: activity.id,
             activity: activity.name,
             startHour,
             endHour,
             duration: endHour - startHour,
-            color: getActivityColor(activity.name)
+            color: getActivityColor(activity.id, activities)
           });
         }
       }
@@ -181,25 +173,29 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
   };
 
   const renderLegend = () => {
-    const activityGroups: { [key: string]: number } = {};
+    const activityGroups: { [key: string]: { name: string; duration: number; color: string } } = {};
     
     chartSessions.forEach(session => {
-      if (!activityGroups[session.activity]) {
-        activityGroups[session.activity] = 0;
+      if (!activityGroups[session.activityId]) {
+        activityGroups[session.activityId] = {
+          name: session.activity,
+          duration: 0,
+          color: session.color
+        };
       }
-      activityGroups[session.activity] += session.duration;
+      activityGroups[session.activityId].duration += session.duration;
     });
 
-    return Object.keys(activityGroups).map((activityName, index) => (
+    return Object.values(activityGroups).map((activity, index) => (
       <View key={index} style={styles.legendItem}>
         <View 
           style={[
             styles.legendColor, 
-            { backgroundColor: getActivityColor(activityName) }
+            { backgroundColor: activity.color }
           ]} 
         />
         <Text style={styles.legendText}>
-          {activityName} ({activityGroups[activityName].toFixed(1)}h)
+          {activity.name} ({activity.duration.toFixed(1)}h)
         </Text>
       </View>
     ));

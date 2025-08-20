@@ -14,6 +14,7 @@ import Svg, { Circle, Path, Text as SvgText, Line, Rect } from 'react-native-svg
 import { useStore } from '../store/store'
 import { TimelineChart } from '../components/TimelineChart'
 import { RingsChart } from '../components/RingsChart'
+import { getActivityColor } from '../utils/activityColors'
 
 type TabType = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
@@ -104,7 +105,6 @@ export default function ReportPage() {
     }
   }
 
-  const COLORS = ['#000000', '#4B5563', '#9CA3AF', '#D1D5DB']
 
   // Calculate chart data for different views
   const chartData = useMemo(() => {
@@ -488,10 +488,10 @@ export default function ReportPage() {
 
         {stats.activityStats.length > 0 ? (
           <View style={styles.activitiesSection}>
-            {stats.activityStats.map((stat, index) => (
+            {stats.activityStats.map((stat) => (
               <View key={stat.id} style={styles.activityItem}>
                 <View style={styles.activityInfo}>
-                  <View style={[styles.activityDot, { backgroundColor: COLORS[index % COLORS.length] }]} />
+                  <View style={[styles.activityDot, { backgroundColor: getActivityColor(stat.id, activities) }]} />
                   <Text style={styles.activityName}>{stat.name}</Text>
                 </View>
                 <Text style={styles.activityTime}>
