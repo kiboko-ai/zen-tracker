@@ -39,10 +39,10 @@ export default function TimerPage() {
   const [targetHours, setTargetHours] = useState(activity?.lastTargetHours || 0)
   const [targetMinutes, setTargetMinutes] = useState(activity?.lastTargetMinutes || 0)
   const [showTargetPicker, setShowTargetPicker] = useState(true)
-  const [showSuccess, setShowSuccess] = useState(false)
   
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
+  const completionDotAnim = useRef(new Animated.Value(0)).current
   const intervalRef = useRef<string | null>(null)
   const startTimeRef = useRef<Date | null>(null)
   const pausedDurationRef = useRef<number>(0)
@@ -57,9 +57,14 @@ export default function TimerPage() {
           const elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
           setSeconds(elapsed)
           
-          if (elapsed === targetSeconds && targetSeconds > 0) {
-            setShowSuccess(true)
-            setTimeout(() => setShowSuccess(false), 5000)
+          // Animate completion dot when goal is reached
+          if (elapsed >= targetSeconds && targetSeconds > 0) {
+            Animated.spring(completionDotAnim, {
+              toValue: 1,
+              friction: 4,
+              tension: 40,
+              useNativeDriver: true,
+            }).start()
           }
         }
       }, 1000)
@@ -78,7 +83,7 @@ export default function TimerPage() {
         intervalRef.current = null
       }
     }
-  }, [isRunning, isPaused, targetSeconds])
+  }, [isRunning, isPaused, targetSeconds, completionDotAnim])
 
 
   useEffect(() => {
@@ -102,6 +107,7 @@ export default function TimerPage() {
     updateActivity(activityId, { lastTargetHours: targetHours, lastTargetMinutes: targetMinutes })
     startTimeRef.current = new Date()
     pausedDurationRef.current = 0
+    completionDotAnim.setValue(0) // Reset completion dot
     setIsRunning(true)
     setShowTargetPicker(false)
   }
@@ -130,12 +136,11 @@ export default function TimerPage() {
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600)
     const minutes = Math.floor((totalSeconds % 3600) / 60)
-    const secs = totalSeconds % 60
     
     if (hours > 0) {
       return `${hours}h ${minutes}m`
     }
-    return `${minutes}m ${secs}s`
+    return `${minutes}m`
   }
 
   const formatTimeDisplay = (totalSeconds: number) => {
@@ -267,36 +272,44 @@ export default function TimerPage() {
               }
             ]}
           >
-            <AnimatedCircularProgress
-              size={width * 0.6}
-              width={8}
-              fill={progress}
-              tintColor={isGoalReached ? '#22c55e' : '#000'}
-              backgroundColor="#f3f4f6"
-              rotation={0}
-              lineCap="round"
-            >
-              {() => (
-                <View style={styles.timerContent}>
-                  <Text style={styles.timeText}>
-                    {formatTimeDisplay(seconds)}
-                  </Text>
-                  {targetSeconds > 0 && !isGoalReached && (
-                    <Text style={styles.targetText}>
-                      Target: {formatTime(targetSeconds)}
+            <View style={styles.progressContainer}>
+              <AnimatedCircularProgress
+                size={width * 0.6}
+                width={8}
+                fill={progress}
+                tintColor="#000"
+                backgroundColor="#f3f4f6"
+                rotation={0}
+                lineCap="round"
+              >
+                {() => (
+                  <View style={styles.timerContent}>
+                    <Text style={styles.timeText}>
+                      {formatTimeDisplay(seconds)}
                     </Text>
-                  )}
-                </View>
+                    {targetSeconds > 0 && (
+                      <Text style={styles.targetText}>
+                        Target: {formatTime(targetSeconds)}
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </AnimatedCircularProgress>
+              {isGoalReached && (
+                <Animated.View 
+                  style={[
+                    styles.completionDot,
+                    {
+                      opacity: completionDotAnim,
+                      transform: [{ scale: completionDotAnim }],
+                    }
+                  ]}
+                />
               )}
-            </AnimatedCircularProgress>
+            </View>
           </Animated.View>
         )}
 
-        {showSuccess && (
-          <Animated.View style={styles.successMessage}>
-            <Text style={styles.successText}>You've done it again!</Text>
-          </Animated.View>
-        )}
 
         {isRunning && (
           <Animated.View 
@@ -462,6 +475,11 @@ const styles = StyleSheet.create({
   timerDisplay: {
     alignItems: 'center',
   },
+  progressContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   timerContent: {
     alignItems: 'center',
   },
@@ -475,13 +493,13 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     color: '#6B7280',
   },
-  successMessage: {
+  completionDot: {
     position: 'absolute',
-    top: '30%',
-  },
-  successText: {
-    fontSize: 24,
-    fontWeight: '300',
+    top: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#000',
   },
   controls: {
     marginTop: 48,
