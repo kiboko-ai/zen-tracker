@@ -110,20 +110,8 @@ export default function HomePage() {
   }, [sessions])
 
   const sortedActivities = useMemo(() => {
-    if (editMode) {
-      return [...activities].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    } else {
-      const hourNow = currentTime.getHours()
-      return [...activities].sort((a, b) => {
-        const getActivityScore = (activity: typeof a) => {
-          const lastUsedHour = new Date(activity.lastUsed).getHours()
-          const hourDiff = Math.abs(hourNow - lastUsedHour)
-          return hourDiff
-        }
-        return getActivityScore(a) - getActivityScore(b)
-      })
-    }
-  }, [activities, editMode, currentTime])
+    return [...activities].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  }, [activities])
 
   const formatActivityTime = (ms: number) => {
     const totalMinutes = Math.floor(ms / 60000)
