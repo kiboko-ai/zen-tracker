@@ -206,7 +206,8 @@ export default function ReportPage() {
   }, [sessions, activeTab, selectedDate])
 
   const BarChart = ({ data }: { data: typeof chartData }) => {
-    const chartWidth = width - 48
+    const chartPadding = 24
+    const chartWidth = width - 48 - (chartPadding * 2)
     const chartHeight = 200
     const barWidth = chartWidth / data.length * 0.6
     const spacing = chartWidth / data.length * 0.4
@@ -657,6 +658,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
     paddingVertical: 16,
+    paddingHorizontal: 24,
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
   },
