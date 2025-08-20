@@ -294,7 +294,7 @@ export default function ReportPage() {
                   onPress={() => setSelectedDate(new Date())}
                   style={styles.todayLink}
                 >
-                  <Text style={styles.todayLinkText}>return to today</Text>
+                  <Text style={styles.todayLinkText}>Back to Today</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -357,7 +357,7 @@ export default function ReportPage() {
                   onPress={() => setSelectedDate(new Date())}
                   style={styles.todayLink}
                 >
-                  <Text style={styles.todayLinkText}>return to today</Text>
+                  <Text style={styles.todayLinkText}>Back to Today</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -395,7 +395,7 @@ export default function ReportPage() {
                   onPress={() => setSelectedDate(new Date())}
                   style={styles.todayLink}
                 >
-                  <Text style={styles.todayLinkText}>return to today</Text>
+                  <Text style={styles.todayLinkText}>Back to Today</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -433,7 +433,7 @@ export default function ReportPage() {
                   onPress={() => setSelectedDate(new Date())}
                   style={styles.todayLink}
                 >
-                  <Text style={styles.todayLinkText}>return to today</Text>
+                  <Text style={styles.todayLinkText}>Back to Today</Text>
                 </TouchableOpacity>
               )}
             </View>
