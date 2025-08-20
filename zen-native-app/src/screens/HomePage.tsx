@@ -158,22 +158,22 @@ export default function HomePage() {
               </Text>
             )}
           </View>
-          {editMode && (
-            <View style={styles.activityActions}>
-              <TouchableOpacity
-                onPress={() => handleEditActivity(item.id, item.name)}
-                style={styles.editButton}
-              >
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleRemoveActivity(item.id)}
-                style={styles.removeButton}
-              >
-                <Text style={styles.removeButtonText}>−</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View style={styles.activityActions}>
+            <TouchableOpacity
+              onPress={() => handleEditActivity(item.id, item.name)}
+              style={[styles.editButton, !editMode && styles.hiddenButton]}
+              disabled={!editMode}
+            >
+              <Text style={[styles.editButtonText, !editMode && styles.hiddenText]}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleRemoveActivity(item.id)}
+              style={[styles.removeButton, !editMode && styles.hiddenButton]}
+              disabled={!editMode}
+            >
+              <Text style={[styles.removeButtonText, !editMode && styles.hiddenText]}>−</Text>
+            </TouchableOpacity>
+          </View>
         </TouchableOpacity>
       </ScaleDecorator>
     )
@@ -201,66 +201,40 @@ export default function HomePage() {
       <View style={styles.titleContainer}>
         <Text style={styles.title}>Choose Your Zen</Text>
         <View style={styles.actionButtons}>
-          {!editMode ? (
-            <>
-              <TouchableOpacity onPress={handleAddActivity} style={styles.addButton}>
-                <Text style={styles.addButtonText}>+</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setEditMode(true)}
-                style={styles.editModeButton}
-              >
-                <Text style={styles.editModeButtonText}>edit</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity
-              onPress={() => setEditMode(false)}
-              style={styles.doneButton}
-            >
-              <Text style={styles.doneButtonText}>done</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity 
+            onPress={handleAddActivity} 
+            style={[styles.addButton, editMode && styles.hiddenButton]}
+            disabled={editMode}
+          >
+            <Text style={[styles.addButtonText, editMode && styles.hiddenText]}>+</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => editMode ? setEditMode(false) : setEditMode(true)}
+            style={editMode ? styles.doneButton : styles.editModeButton}
+          >
+            <Text style={editMode ? styles.doneButtonText : styles.editModeButtonText}>
+              {editMode ? 'done' : 'edit'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
-      {editMode ? (
-        <DraggableFlatList
-          data={sortedActivities}
-          onDragEnd={({ data }) => {
+      <DraggableFlatList
+        data={sortedActivities}
+        onDragEnd={({ data }) => {
+          if (editMode) {
             const updatedActivities = data.map((activity, index) => ({
               ...activity,
               order: index
             }))
             reorderActivities(updatedActivities)
-          }}
-          keyExtractor={(item) => item.id}
-          renderItem={renderActivity}
-          containerStyle={styles.listContainer}
-        />
-      ) : (
-        <ScrollView style={styles.listContainer}>
-          {sortedActivities.map((activity) => {
-            const todayTime = todayActivityTimes.get(activity.id)
-            return (
-              <TouchableOpacity
-                key={activity.id}
-                onPress={() => handleStartActivity(activity.id)}
-                style={styles.activityCard}
-              >
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityName}>{activity.name}</Text>
-                  {todayTime && (
-                    <Text style={styles.activityTime}>
-                      {formatActivityTime(todayTime)} focused today
-                    </Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            )
-          })}
-        </ScrollView>
-      )}
+          }
+        }}
+        keyExtractor={(item) => item.id}
+        renderItem={renderActivity}
+        containerStyle={styles.listContainer}
+        activationDistance={editMode ? 10 : 999999}
+      />
 
       {showAddModal && (
         <KeyboardAvoidingView
@@ -359,6 +333,8 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
+    minWidth: 100,
+    justifyContent: 'flex-end',
   },
   addButton: {
     width: 32,
@@ -375,29 +351,40 @@ const styles = StyleSheet.create({
   },
   editModeButton: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 50,
   },
   editModeButtonText: {
     fontSize: 14,
     fontWeight: '300',
+    textAlign: 'center',
   },
   doneButton: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 12,
     backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 50,
   },
   doneButtonText: {
     fontSize: 14,
     fontWeight: '300',
     color: 'white',
+    textAlign: 'center',
   },
   listContainer: {
     flex: 1,
     paddingHorizontal: 24,
+  },
+  scaleDecoratorWrapper: {
+    // ScaleDecorator와 동일한 구조를 위한 래퍼
   },
   activityCard: {
     backgroundColor: 'black',
@@ -407,6 +394,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 68,
   },
   activityCardActive: {
     opacity: 0.8,
@@ -429,6 +417,15 @@ const styles = StyleSheet.create({
   activityActions: {
     flexDirection: 'row',
     gap: 8,
+    width: 80,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  hiddenButton: {
+    opacity: 0,
+  },
+  hiddenText: {
+    opacity: 0,
   },
   editButton: {
     paddingHorizontal: 8,
