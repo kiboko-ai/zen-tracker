@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import {
   View,
   Text,
@@ -33,6 +33,8 @@ export default function HomePage() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
+  const dragHandleAnimation = useRef(new Animated.Value(0)).current
+  const contentAnimation = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -40,6 +42,21 @@ export default function HomePage() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(dragHandleAnimation, {
+        toValue: editMode ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentAnimation, {
+        toValue: editMode ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start()
+  }, [editMode])
 
   const handleAddActivity = () => {
     setNewActivityName('')
@@ -138,19 +155,37 @@ export default function HomePage() {
             isActive && styles.activityCardActive
           ]}
         >
-          <View style={[styles.dragHandle, !editMode && styles.hiddenButton]}>
+          <Animated.View style={[
+            styles.dragHandle,
+            {
+              opacity: dragHandleAnimation,
+              transform: [{
+                scaleX: dragHandleAnimation
+              }]
+            }
+          ]}>
             <View style={styles.dragLine} />
             <View style={styles.dragLine} />
             <View style={styles.dragLine} />
-          </View>
-          <View style={styles.activityContent}>
+          </Animated.View>
+          <Animated.View style={[
+            styles.activityContent,
+            {
+              transform: [{
+                translateX: contentAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-16, 0]
+                })
+              }]
+            }
+          ]}>
             <Text style={styles.activityName}>{item.name}</Text>
             {todayTime && (
               <Text style={styles.activityTime}>
                 {formatActivityTime(todayTime)} focused today
               </Text>
             )}
-          </View>
+          </Animated.View>
           <View style={styles.activityActions}>
             <TouchableOpacity
               onPress={() => handleEditActivity(item.id, item.name)}
@@ -425,10 +460,11 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   dragHandle: {
-    width: 20,
+    width: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    overflow: 'hidden',
+    marginRight: 8,
   },
   dragLine: {
     width: 16,
