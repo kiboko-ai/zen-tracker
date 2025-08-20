@@ -288,28 +288,7 @@ export default function ReportPage() {
       <ScrollView style={styles.content}>
         {activeTab === 'daily' && (
           <>
-            <View style={styles.dateContainer}>
-              <View style={styles.dateNavigation}>
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(subDays(selectedDate, 1))}
-                  style={styles.dateNavButton}
-                >
-                  <Text style={styles.dateNavText}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.dateLabel}>
-                  {format(selectedDate, 'yyyy. MM. dd')}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(addDays(selectedDate, 1))}
-                  style={styles.dateNavButton}
-                  disabled={format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')}
-                >
-                  <Text style={[
-                    styles.dateNavText,
-                    format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && styles.disabledText
-                  ]}>›</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.todayLinkContainer}>
               {!isToday && (
                 <TouchableOpacity
                   onPress={() => setSelectedDate(new Date())}
@@ -318,6 +297,27 @@ export default function ReportPage() {
                   <Text style={styles.todayLinkText}>return to today</Text>
                 </TouchableOpacity>
               )}
+            </View>
+            <View style={styles.dateNavigation}>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(subDays(selectedDate, 1))}
+                style={styles.dateNavButton}
+              >
+                <Text style={styles.dateNavText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateLabel}>
+                {format(selectedDate, 'yyyy. MM. dd')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(addDays(selectedDate, 1))}
+                style={styles.dateNavButton}
+                disabled={format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')}
+              >
+                <Text style={[
+                  styles.dateNavText,
+                  format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && styles.disabledText
+                ]}>›</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.chartToggle}>
@@ -351,28 +351,7 @@ export default function ReportPage() {
 
         {activeTab === 'weekly' && (
           <>
-            <View style={styles.dateContainer}>
-              <View style={styles.dateNavigation}>
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(subWeeks(selectedDate, 1))}
-                  style={styles.dateNavButton}
-                >
-                  <Text style={styles.dateNavText}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.dateLabel}>
-                  {format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy. MM. dd')} - {format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'MM.dd')}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(addWeeks(selectedDate, 1))}
-                  style={styles.dateNavButton}
-                  disabled={format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd') >= format(new Date(), 'yyyy-MM-dd')}
-                >
-                  <Text style={[
-                    styles.dateNavText,
-                    format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd') >= format(new Date(), 'yyyy-MM-dd') && styles.disabledText
-                  ]}>›</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.todayLinkContainer}>
               {!isToday && (
                 <TouchableOpacity
                   onPress={() => setSelectedDate(new Date())}
@@ -382,6 +361,27 @@ export default function ReportPage() {
                 </TouchableOpacity>
               )}
             </View>
+            <View style={styles.dateNavigation}>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(subWeeks(selectedDate, 1))}
+                style={styles.dateNavButton}
+              >
+                <Text style={styles.dateNavText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateLabel}>
+                {format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy. MM. dd')} - {format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'MM.dd')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(addWeeks(selectedDate, 1))}
+                style={styles.dateNavButton}
+                disabled={format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd') >= format(new Date(), 'yyyy-MM-dd')}
+              >
+                <Text style={[
+                  styles.dateNavText,
+                  format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd') >= format(new Date(), 'yyyy-MM-dd') && styles.disabledText
+                ]}>›</Text>
+              </TouchableOpacity>
+            </View>
             
             <BarChart data={chartData} />
           </>
@@ -389,28 +389,7 @@ export default function ReportPage() {
 
         {activeTab === 'monthly' && (
           <>
-            <View style={styles.dateContainer}>
-              <View style={styles.dateNavigation}>
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(subMonths(selectedDate, 1))}
-                  style={styles.dateNavButton}
-                >
-                  <Text style={styles.dateNavText}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.dateLabel}>
-                  {format(selectedDate, 'yyyy. MM')}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(addMonths(selectedDate, 1))}
-                  style={styles.dateNavButton}
-                  disabled={format(selectedDate, 'yyyy-MM') >= format(new Date(), 'yyyy-MM')}
-                >
-                  <Text style={[
-                    styles.dateNavText,
-                    format(selectedDate, 'yyyy-MM') >= format(new Date(), 'yyyy-MM') && styles.disabledText
-                  ]}>›</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.todayLinkContainer}>
               {(format(selectedDate, 'yyyy-MM') !== format(new Date(), 'yyyy-MM')) && (
                 <TouchableOpacity
                   onPress={() => setSelectedDate(new Date())}
@@ -420,6 +399,27 @@ export default function ReportPage() {
                 </TouchableOpacity>
               )}
             </View>
+            <View style={styles.dateNavigation}>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(subMonths(selectedDate, 1))}
+                style={styles.dateNavButton}
+              >
+                <Text style={styles.dateNavText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateLabel}>
+                {format(selectedDate, 'yyyy. MM')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(addMonths(selectedDate, 1))}
+                style={styles.dateNavButton}
+                disabled={format(selectedDate, 'yyyy-MM') >= format(new Date(), 'yyyy-MM')}
+              >
+                <Text style={[
+                  styles.dateNavText,
+                  format(selectedDate, 'yyyy-MM') >= format(new Date(), 'yyyy-MM') && styles.disabledText
+                ]}>›</Text>
+              </TouchableOpacity>
+            </View>
             
             <BarChart data={chartData} />
           </>
@@ -427,28 +427,7 @@ export default function ReportPage() {
 
         {activeTab === 'yearly' && (
           <>
-            <View style={styles.dateContainer}>
-              <View style={styles.dateNavigation}>
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(subYears(selectedDate, 1))}
-                  style={styles.dateNavButton}
-                >
-                  <Text style={styles.dateNavText}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.dateLabel}>
-                  {format(selectedDate, 'yyyy')}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(addYears(selectedDate, 1))}
-                  style={styles.dateNavButton}
-                  disabled={selectedDate.getFullYear() >= new Date().getFullYear()}
-                >
-                  <Text style={[
-                    styles.dateNavText,
-                    selectedDate.getFullYear() >= new Date().getFullYear() && styles.disabledText
-                  ]}>›</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.todayLinkContainer}>
               {selectedDate.getFullYear() !== new Date().getFullYear() && (
                 <TouchableOpacity
                   onPress={() => setSelectedDate(new Date())}
@@ -457,6 +436,27 @@ export default function ReportPage() {
                   <Text style={styles.todayLinkText}>return to today</Text>
                 </TouchableOpacity>
               )}
+            </View>
+            <View style={styles.dateNavigation}>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(subYears(selectedDate, 1))}
+                style={styles.dateNavButton}
+              >
+                <Text style={styles.dateNavText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateLabel}>
+                {format(selectedDate, 'yyyy')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(addYears(selectedDate, 1))}
+                style={styles.dateNavButton}
+                disabled={selectedDate.getFullYear() >= new Date().getFullYear()}
+              >
+                <Text style={[
+                  styles.dateNavText,
+                  selectedDate.getFullYear() >= new Date().getFullYear() && styles.disabledText
+                ]}>›</Text>
+              </TouchableOpacity>
             </View>
             
             <BarChart data={chartData} />
@@ -574,13 +574,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
-  dateContainer: {
-    marginBottom: 24,
-  },
   dateNavigation: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 24,
   },
   dateNavButton: {
     padding: 8,
@@ -711,10 +709,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
   },
+  todayLinkContainer: {
+    height: 24,
+    alignItems: 'flex-end',
+    paddingRight: 8,
+    marginBottom: 4,
+  },
   todayLink: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
-    paddingVertical: 4,
+    padding: 0,
   },
   todayLinkText: {
     fontSize: 13,
