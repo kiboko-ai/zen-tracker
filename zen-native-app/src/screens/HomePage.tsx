@@ -128,7 +128,7 @@ export default function HomePage() {
     const todayTime = todayActivityTimes.get(item.id)
     
     return (
-      <ScaleDecorator>
+      <ScaleDecorator activeScale={0.98}>
         <TouchableOpacity
           onPress={() => !editMode && handleStartActivity(item.id)}
           onLongPress={editMode ? drag : undefined}
@@ -138,6 +138,11 @@ export default function HomePage() {
             isActive && styles.activityCardActive
           ]}
         >
+          <View style={[styles.dragHandle, !editMode && styles.hiddenButton]}>
+            <View style={styles.dragLine} />
+            <View style={styles.dragLine} />
+            <View style={styles.dragLine} />
+          </View>
           <View style={styles.activityContent}>
             <Text style={styles.activityName}>{item.name}</Text>
             {todayTime && (
@@ -385,8 +390,12 @@ const styles = StyleSheet.create({
     minHeight: 68,
   },
   activityCardActive: {
-    opacity: 0.8,
-    transform: [{ scale: 1.02 }],
+    opacity: 0.9,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   activityContent: {
     flex: 1,
@@ -414,6 +423,19 @@ const styles = StyleSheet.create({
   },
   hiddenText: {
     opacity: 0,
+  },
+  dragHandle: {
+    width: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  dragLine: {
+    width: 16,
+    height: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginVertical: 2,
+    borderRadius: 1,
   },
   editButton: {
     paddingHorizontal: 8,
