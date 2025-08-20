@@ -9,8 +9,8 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, addDays, subDays } from 'date-fns'
-import Svg, { Circle, Path, Text as SvgText, Line } from 'react-native-svg'
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, addYears, subYears, eachDayOfInterval, getDay, getDaysInMonth, getMonth } from 'date-fns'
+import Svg, { Circle, Path, Text as SvgText, Line, Rect } from 'react-native-svg'
 import { useStore } from '../store/store'
 import { TimelineChart } from '../components/TimelineChart'
 import { RingsChart } from '../components/RingsChart'
@@ -105,6 +105,148 @@ export default function ReportPage() {
 
   const COLORS = ['#000000', '#4B5563', '#9CA3AF', '#D1D5DB']
 
+  // Calculate chart data for different views
+  const chartData = useMemo(() => {
+    const range = getDateRange(activeTab)
+    
+    if (activeTab === 'weekly') {
+      // Get data for each day of the week
+      const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 })
+      
+      return weekDays.map((day, index) => {
+        const dayDate = addDays(weekStart, index)
+        const dayStart = startOfDay(dayDate)
+        const dayEnd = endOfDay(dayDate)
+        
+        const daySessions = sessions.filter(session =>
+          isWithinInterval(new Date(session.startTime), { start: dayStart, end: dayEnd })
+        )
+        
+        const totalTime = daySessions.reduce((acc, session) => acc + session.duration, 0)
+        const isToday = format(dayDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+        
+        return {
+          label: day,
+          value: totalTime,
+          isHighlighted: isToday,
+          maxValue: Math.max(...weekDays.map((_, i) => {
+            const d = addDays(weekStart, i)
+            const ds = startOfDay(d)
+            const de = endOfDay(d)
+            const dSessions = sessions.filter(s =>
+              isWithinInterval(new Date(s.startTime), { start: ds, end: de })
+            )
+            return dSessions.reduce((acc, s) => acc + s.duration, 0)
+          }))
+        }
+      })
+    } else if (activeTab === 'monthly') {
+      // Get data for each month
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      const year = selectedDate.getFullYear()
+      const currentMonth = getMonth(selectedDate)
+      
+      return months.map((month, index) => {
+        const monthStart = startOfMonth(new Date(year, index))
+        const monthEnd = endOfMonth(new Date(year, index))
+        
+        const monthSessions = sessions.filter(session =>
+          isWithinInterval(new Date(session.startTime), { start: monthStart, end: monthEnd })
+        )
+        
+        const totalTime = monthSessions.reduce((acc, session) => acc + session.duration, 0)
+        
+        return {
+          label: month,
+          value: totalTime,
+          isHighlighted: index === currentMonth,
+          maxValue: Math.max(...months.map((_, i) => {
+            const ms = startOfMonth(new Date(year, i))
+            const me = endOfMonth(new Date(year, i))
+            const mSessions = sessions.filter(s =>
+              isWithinInterval(new Date(s.startTime), { start: ms, end: me })
+            )
+            return mSessions.reduce((acc, s) => acc + s.duration, 0)
+          }))
+        }
+      })
+    } else if (activeTab === 'yearly') {
+      // Get data for current and previous year
+      const currentYear = selectedDate.getFullYear()
+      const years = [currentYear - 1, currentYear]
+      
+      return years.map(year => {
+        const yearStart = startOfYear(new Date(year, 0))
+        const yearEnd = endOfYear(new Date(year, 0))
+        
+        const yearSessions = sessions.filter(session =>
+          isWithinInterval(new Date(session.startTime), { start: yearStart, end: yearEnd })
+        )
+        
+        const totalTime = yearSessions.reduce((acc, session) => acc + session.duration, 0)
+        
+        return {
+          label: year.toString(),
+          value: totalTime,
+          isHighlighted: year === currentYear,
+          maxValue: Math.max(...years.map(y => {
+            const ys = startOfYear(new Date(y, 0))
+            const ye = endOfYear(new Date(y, 0))
+            const ySessions = sessions.filter(s =>
+              isWithinInterval(new Date(s.startTime), { start: ys, end: ye })
+            )
+            return ySessions.reduce((acc, s) => acc + s.duration, 0)
+          }))
+        }
+      })
+    }
+    
+    return []
+  }, [sessions, activeTab, selectedDate])
+
+  const BarChart = ({ data }: { data: typeof chartData }) => {
+    const chartWidth = width - 48
+    const chartHeight = 200
+    const barWidth = chartWidth / data.length * 0.6
+    const spacing = chartWidth / data.length * 0.4
+    const maxValue = Math.max(...data.map(d => d.maxValue || 1), 1)
+    
+    return (
+      <View style={styles.barChartContainer}>
+        <Svg width={chartWidth} height={chartHeight + 30}>
+          {data.map((item, index) => {
+            const barHeight = (item.value / maxValue) * chartHeight * 0.8
+            const x = index * (barWidth + spacing) + spacing / 2
+            const y = chartHeight - barHeight - 20
+            
+            return (
+              <React.Fragment key={index}>
+                <Rect
+                  x={x}
+                  y={y}
+                  width={barWidth}
+                  height={barHeight}
+                  fill={item.isHighlighted ? '#000000' : '#9CA3AF'}
+                  rx={4}
+                />
+                <SvgText
+                  x={x + barWidth / 2}
+                  y={chartHeight}
+                  fontSize="12"
+                  fill="#6B7280"
+                  textAnchor="middle"
+                >
+                  {item.label}
+                </SvgText>
+              </React.Fragment>
+            )
+          })}
+        </Svg>
+      </View>
+    )
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -192,8 +334,85 @@ export default function ReportPage() {
           </>
         )}
 
-        {activeTab !== 'daily' && (
-          <Text style={styles.periodLabel}>{getDateLabel()}</Text>
+        {activeTab === 'weekly' && (
+          <>
+            <View style={styles.dateNavigation}>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(subWeeks(selectedDate, 1))}
+                style={styles.dateNavButton}
+              >
+                <Text style={styles.dateNavText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateLabel}>
+                {format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy. MM. dd')} - {format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'MM.dd')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(addWeeks(selectedDate, 1))}
+                style={styles.dateNavButton}
+                disabled={format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd') >= format(new Date(), 'yyyy-MM-dd')}
+              >
+                <Text style={[
+                  styles.dateNavText,
+                  format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd') >= format(new Date(), 'yyyy-MM-dd') && styles.disabledText
+                ]}>›</Text>
+              </TouchableOpacity>
+            </View>
+            <BarChart data={chartData} />
+          </>
+        )}
+
+        {activeTab === 'monthly' && (
+          <>
+            <View style={styles.dateNavigation}>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(subYears(selectedDate, 1))}
+                style={styles.dateNavButton}
+              >
+                <Text style={styles.dateNavText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateLabel}>
+                {format(selectedDate, 'yyyy. MM')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(addYears(selectedDate, 1))}
+                style={styles.dateNavButton}
+                disabled={selectedDate.getFullYear() >= new Date().getFullYear()}
+              >
+                <Text style={[
+                  styles.dateNavText,
+                  selectedDate.getFullYear() >= new Date().getFullYear() && styles.disabledText
+                ]}>›</Text>
+              </TouchableOpacity>
+            </View>
+            <BarChart data={chartData} />
+          </>
+        )}
+
+        {activeTab === 'yearly' && (
+          <>
+            <View style={styles.dateNavigation}>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(subYears(selectedDate, 1))}
+                style={styles.dateNavButton}
+              >
+                <Text style={styles.dateNavText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateLabel}>
+                {format(selectedDate, 'yyyy')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSelectedDate(addYears(selectedDate, 1))}
+                style={styles.dateNavButton}
+                disabled={selectedDate.getFullYear() >= new Date().getFullYear()}
+              >
+                <Text style={[
+                  styles.dateNavText,
+                  selectedDate.getFullYear() >= new Date().getFullYear() && styles.disabledText
+                ]}>›</Text>
+              </TouchableOpacity>
+            </View>
+            <BarChart data={chartData} />
+          </>
         )}
 
         <View style={styles.statsGrid}>
@@ -433,5 +652,12 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     marginBottom: 24,
+  },
+  barChartContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingVertical: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
   },
 })
