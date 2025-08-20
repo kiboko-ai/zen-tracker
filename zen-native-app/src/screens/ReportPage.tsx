@@ -142,7 +142,7 @@ export default function ReportPage() {
         }
       })
     } else if (activeTab === 'monthly') {
-      // Get data for each month
+      // Get data for each month of the year
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       const year = selectedDate.getFullYear()
       const currentMonth = getMonth(selectedDate)
@@ -209,8 +209,11 @@ export default function ReportPage() {
     const chartPadding = 24
     const chartWidth = width - 48 - (chartPadding * 2)
     const chartHeight = 200
+    
+    // Adjust bar width and spacing based on data length
     const barWidth = chartWidth / data.length * 0.6
     const spacing = chartWidth / data.length * 0.4
+    
     const maxValue = Math.max(...data.map(d => d.maxValue || 1), 1)
     
     return (
@@ -366,7 +369,7 @@ export default function ReportPage() {
           <>
             <View style={styles.dateNavigation}>
               <TouchableOpacity
-                onPress={() => setSelectedDate(subYears(selectedDate, 1))}
+                onPress={() => setSelectedDate(subMonths(selectedDate, 1))}
                 style={styles.dateNavButton}
               >
                 <Text style={styles.dateNavText}>‹</Text>
@@ -375,13 +378,13 @@ export default function ReportPage() {
                 {format(selectedDate, 'yyyy. MM')}
               </Text>
               <TouchableOpacity
-                onPress={() => setSelectedDate(addYears(selectedDate, 1))}
+                onPress={() => setSelectedDate(addMonths(selectedDate, 1))}
                 style={styles.dateNavButton}
-                disabled={selectedDate.getFullYear() >= new Date().getFullYear()}
+                disabled={format(selectedDate, 'yyyy-MM') >= format(new Date(), 'yyyy-MM')}
               >
                 <Text style={[
                   styles.dateNavText,
-                  selectedDate.getFullYear() >= new Date().getFullYear() && styles.disabledText
+                  format(selectedDate, 'yyyy-MM') >= format(new Date(), 'yyyy-MM') && styles.disabledText
                 ]}>›</Text>
               </TouchableOpacity>
             </View>
