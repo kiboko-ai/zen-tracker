@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   activityCard: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 24,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#D1D5DB',
   },
