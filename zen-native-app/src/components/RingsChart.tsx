@@ -76,44 +76,51 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
     const markers = [];
     const outerRadius = center - 30; // 시간 표시를 더 안쪽으로
     
-    // Only show major hour markers (every 3 hours)
-    for (let i = 0; i < 24; i += 3) {
+    // Add tick marks for all 24 hours
+    for (let i = 0; i < 24; i++) {
       const angle = (i * 15) - 90; // 15 degrees per hour, start from top
       const angleRad = angle * Math.PI / 180;
       
-      const x1 = center + (outerRadius - 8) * Math.cos(angleRad);
-      const y1 = center + (outerRadius - 8) * Math.sin(angleRad);
+      // Major tick marks (every 3 hours) are longer
+      const isMajor = i % 3 === 0;
+      const tickLength = isMajor ? 8 : 4;
+      
+      const x1 = center + (outerRadius - tickLength) * Math.cos(angleRad);
+      const y1 = center + (outerRadius - tickLength) * Math.sin(angleRad);
       const x2 = center + outerRadius * Math.cos(angleRad);
       const y2 = center + outerRadius * Math.sin(angleRad);
       
       markers.push(
         <Path
-          key={i}
+          key={`tick-${i}`}
           d={`M ${x1} ${y1} L ${x2} ${y2}`}
-          stroke="#666"
-          strokeWidth={1}
+          stroke={isMajor ? "#666" : "#CCC"}
+          strokeWidth={isMajor ? 1 : 0.5}
         />
       );
       
-      // Position text with more spacing
-      const textRadius = outerRadius + 20; // 더 많은 여백
-      const textX = center + textRadius * Math.cos(angleRad);
-      const textY = center + textRadius * Math.sin(angleRad);
-      
-      markers.push(
-        <G key={`text-${i}`}>
-          <SvgText
-            x={textX}
-            y={textY + 2}
-            fontSize="9"
-            fill="#666"
-            textAnchor="middle"
-            fontWeight="400"
-          >
-            {i.toString().padStart(2, '0')}
-          </SvgText>
-        </G>
-      );
+      // Only add text for major markers (every 3 hours)
+      if (isMajor) {
+        // Position text with more spacing
+        const textRadius = outerRadius + 20; // 더 많은 여백
+        const textX = center + textRadius * Math.cos(angleRad);
+        const textY = center + textRadius * Math.sin(angleRad);
+        
+        markers.push(
+          <G key={`text-${i}`}>
+            <SvgText
+              x={textX}
+              y={textY + 2}
+              fontSize="9"
+              fill="#666"
+              textAnchor="middle"
+              fontWeight="400"
+            >
+              {i.toString().padStart(2, '0')}
+            </SvgText>
+          </G>
+        );
+      }
     }
     
     return markers;

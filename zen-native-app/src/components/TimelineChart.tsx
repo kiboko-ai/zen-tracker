@@ -137,11 +137,11 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ activities, sessio
           <View style={styles.timeAxis}>
             {Array.from({ length: 25 }, (_, i) => (
               <View key={i} style={[styles.hourMark, { width: i === 24 ? 30 : hourWidth }]}>
-                {(i % 4 === 0 || i === 24) && (
-                  <Text style={styles.hourText}>{i === 24 ? '24' : i.toString().padStart(2, '0')}</Text>
-                )}
+                <Text style={[styles.hourText, { fontSize: i % 3 === 0 ? 10 : 8 }]}>
+                  {i.toString().padStart(2, '0')}
+                </Text>
                 {i < 24 && (
-                  <View style={[styles.hourLine, { opacity: i % 4 === 0 ? 1 : 0.3 }]} />
+                  <View style={[styles.hourLine, { opacity: i % 3 === 0 ? 1 : 0.5 }]} />
                 )}
               </View>
             ))}
