@@ -19,10 +19,8 @@ import DraggableFlatList, {
   ScaleDecorator,
   RenderItemParams,
 } from 'react-native-draggable-flatlist'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
-import { OnboardingTutorial } from '../components/OnboardingTutorial'
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>
 
@@ -35,7 +33,6 @@ export default function HomePage() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
-  const [showTutorial, setShowTutorial] = useState(false)
   const dragHandleAnimation = useRef(new Animated.Value(0)).current
   const contentAnimation = useRef(new Animated.Value(0)).current
 
@@ -45,21 +42,6 @@ export default function HomePage() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
-
-  useEffect(() => {
-    checkFirstLaunch()
-  }, [])
-
-  const checkFirstLaunch = async () => {
-    try {
-      const hasSeenTutorial = await AsyncStorage.getItem('hasSeenTutorial')
-      if (!hasSeenTutorial) {
-        setShowTutorial(true)
-      }
-    } catch (error) {
-      console.error('Error checking first launch:', error)
-    }
-  }
 
   useEffect(() => {
     Animated.parallel([
@@ -226,12 +208,7 @@ export default function HomePage() {
   }
 
   return (
-    <>
-      <OnboardingTutorial
-        visible={showTutorial}
-        onComplete={() => setShowTutorial(false)}
-      />
-      <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.timeContainer}>
           <Text style={styles.dateText}>{format(currentTime, 'yyyy. MM. dd')}</Text>
@@ -329,7 +306,6 @@ export default function HomePage() {
         </KeyboardAvoidingView>
       )}
     </SafeAreaView>
-    </>
   )
 }
 

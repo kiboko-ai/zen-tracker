@@ -1,12 +1,14 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import HomePage from './src/screens/HomePage'
 import TimerPage from './src/screens/TimerPage'
 import ReportPage from './src/screens/ReportPage'
 import OnboardingPage from './src/screens/OnboardingPage'
+import { OnboardingTutorial } from './src/components/OnboardingTutorial'
 import { useStore } from './src/store/store'
 
 export type RootStackParamList = {
@@ -21,13 +23,40 @@ const Stack = createStackNavigator<RootStackParamList>()
 export default function App() {
   const isFirstTime = useStore(state => state.isFirstTime)
   const activities = useStore(state => state.activities)
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   
   // If there are existing activities, skip onboarding regardless of isFirstTime flag
   const shouldShowOnboarding = isFirstTime && activities.length === 0
 
+  useEffect(() => {
+    checkFirstLaunch()
+  }, [])
+
+  const checkFirstLaunch = async () => {
+    try {
+      const hasSeenTutorial = await AsyncStorage.getItem('hasSeenTutorial')
+      if (!hasSeenTutorial) {
+        setShowTutorial(true)
+      }
+      setIsLoading(false)
+    } catch (error) {
+      console.error('Error checking first launch:', error)
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return null // Or a loading screen
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        <OnboardingTutorial
+          visible={showTutorial}
+          onComplete={() => setShowTutorial(false)}
+        />
         <NavigationContainer>
           <Stack.Navigator
             initialRouteName={shouldShowOnboarding ? "Onboarding" : "Home"}
