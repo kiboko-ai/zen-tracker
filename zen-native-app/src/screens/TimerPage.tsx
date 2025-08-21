@@ -484,6 +484,8 @@ const styles = StyleSheet.create({
   },
   timerDisplay: {
     alignItems: 'center',
+    height: width * 0.6,
+    justifyContent: 'center',
   },
   progressContainer: {
     position: 'relative',
@@ -513,6 +515,9 @@ const styles = StyleSheet.create({
   },
   controls: {
     marginTop: 48,
+    height: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pauseButton: {
     width: 96,
