@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zen Tracker - Calm App Store Screenshots (Server Version)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 200;
+            font-size: 28px;
+            color: #333;
+            letter-spacing: 2px;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #999;
+            margin-bottom: 40px;
+            font-size: 13px;
+            font-weight: 300;
+        }
+
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .screenshot-wrapper {
+            background: white;
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: relative;
+            width: 430px;
+            height: 932px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .screenshot-wrapper:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+
+        .download-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 10;
+            letter-spacing: 0.5px;
+        }
+
+        .screenshot-wrapper:hover .download-btn {
+            opacity: 1;
+        }
+
+        .screenshot-number {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(0,0,0,0.06);
+            color: #666;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .marketing-text {
+            padding: 80px 35px 50px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .marketing-title {
+            font-size: 36px;
+            font-weight: 300;
+            color: #222;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            line-height: 1.3;
+        }
+
+        .marketing-subtitle {
+            font-size: 16px;
+            font-weight: 300;
+            color: #888;
+            letter-spacing: 0.5px;
+            line-height: 1.5;
+        }
+
+        .device-frame {
+            flex: 1;
+            padding: 0 35px 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .device-container {
+            position: relative;
+            width: 100%;
+            max-width: 260px;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            border-radius: 40px;
+            border: 1px solid rgba(0,0,0,0.1);
+            padding: 12px;
+            box-shadow: 
+                0 2px 10px rgba(0,0,0,0.05),
+                0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        .screenshot-img {
+            width: 100%;
+            border-radius: 28px;
+            display: block;
+        }
+
+        /* Soft gradient backgrounds */
+        .screenshot-1 { background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); }
+        .screenshot-2 { background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); }
+        .screenshot-3 { background: linear-gradient(135deg, #fafafa 0%, #f0f2f5 100%); }
+        .screenshot-4 { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%); }
+        .screenshot-5 { background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); }
+
+        .zen-line {
+            position: absolute;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>zen tracker</h1>
+        <p class="instructions">
+            gentle • mindful • simple<br>
+            <span style="opacity: 0.6">Click each card to download as PNG (1290 × 2796)</span>
+        </p>
+
+        <div class="screenshots-grid" id="screenshotsGrid"></div>
+    </div>
+
+    <script>
+        const screenshotData = [
+            {
+                title: ['begin your', 'journey'],
+                subtitle: 'a moment of clarity awaits',
+                image: 'http://localhost:8888/1.png'
+            },
+            {
+                title: ['find your', 'rhythm'],
+                subtitle: 'small steps, lasting change',
+                image: 'http://localhost:8888/2.png'
+            },
+            {
+                title: ['cultivate', 'awareness'],
+                subtitle: 'every moment counts',
+                image: 'http://localhost:8888/3.png'
+            },
+            {
+                title: ['observe your', 'patterns'],
+                subtitle: 'understand yourself better',
+                image: 'http://localhost:8888/4.png'
+            },
+            {
+                title: ['embrace', 'simplicity'],
+                subtitle: 'less noise, more peace',
+                image: 'http://localhost:8888/5.png'
+            }
+        ];
+
+        function createScreenshotCard(data, index) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `screenshot-wrapper screenshot-${index + 1}`;
+            
+            wrapper.innerHTML = `
+                <div class="screenshot-number">${index + 1}</div>
+                <div class="download-btn">⬇ Download Full Image</div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">${data.title[0]}<br>${data.title[1]}</h2>
+                    <p class="marketing-subtitle">${data.subtitle}</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="${data.image}" 
+                             alt="Screenshot ${index + 1}" 
+                             class="screenshot-img"
+                             crossorigin="anonymous">
+                    </div>
+                </div>
+                <div class="zen-line"></div>
+            `;
+            
+            return wrapper;
+        }
+
+        function downloadScreenshot(wrapper, index) {
+            // Create super high resolution canvas (3x for maximum quality)
+            const scale = 3;
+            const baseWidth = 1290;
+            const baseHeight = 2796;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = baseWidth * scale;
+            canvas.height = baseHeight * scale;
+            
+            const ctx = canvas.getContext('2d', {
+                alpha: false,
+                desynchronized: true,
+                willReadFrequently: false
+            });
+            
+            // Enable best quality settings
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Scale context for high DPI
+            ctx.scale(scale, scale);
+            
+            // IMPORTANT: Fill entire canvas with solid white first (no transparency)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, baseWidth, baseHeight);
+            
+            // Draw rounded rectangle
+            function drawRoundedRect(x, y, w, h, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + w - radius, y);
+                ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                ctx.lineTo(x + w, y + h - radius);
+                ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+                ctx.lineTo(x + radius, y + h);
+                ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+            }
+            
+            // Background gradient (over white background)
+            const gradients = [
+                ['#ffffff', '#f8f9fa'],
+                ['#f5f7fa', '#e9ecef'],
+                ['#fafafa', '#f0f2f5'],
+                ['#f8f9fa', '#e9ecef'],
+                ['#e9ecef', '#dee2e6']
+            ];
+            
+            // Fill entire canvas with gradient (no rounded corners for main background)
+            const gradient = ctx.createLinearGradient(0, 0, baseWidth, baseHeight);
+            gradient.addColorStop(0, gradients[index][0]);
+            gradient.addColorStop(1, gradients[index][1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, baseWidth, baseHeight);
+            
+            // Marketing text (with crisp font rendering)
+            const data = screenshotData[index];
+            
+            // Use strokeText + fillText for sharper text
+            ctx.fillStyle = '#222222';
+            ctx.strokeStyle = '#222222';
+            ctx.lineWidth = 0.5;
+            ctx.font = '300 108px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'alphabetic';
+            
+            // Title - stroke then fill for sharper edges
+            ctx.strokeText(data.title[0], baseWidth/2, 320);
+            ctx.fillText(data.title[0], baseWidth/2, 320);
+            ctx.strokeText(data.title[1], baseWidth/2, 440);
+            ctx.fillText(data.title[1], baseWidth/2, 440);
+            
+            // Subtitle
+            ctx.fillStyle = '#888888';
+            ctx.strokeStyle = '#888888';
+            ctx.lineWidth = 0.3;
+            ctx.font = '300 48px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif';
+            ctx.strokeText(data.subtitle, baseWidth/2, 540);
+            ctx.fillText(data.subtitle, baseWidth/2, 540);
+            
+            // Device and screenshot
+            const img = wrapper.querySelector('.screenshot-img');
+            const deviceX = (baseWidth - 780) / 2;
+            const deviceY = 650;
+            const deviceWidth = 780;
+            const deviceHeight = 1690;
+            
+            // Device shadow (create fake shadow with solid colors)
+            // Draw shadow as solid shape first
+            ctx.fillStyle = '#e0e0e0';
+            drawRoundedRect(deviceX + 5, deviceY + 8, deviceWidth, deviceHeight, 120);
+            ctx.fill();
+            
+            // Draw device background
+            drawRoundedRect(deviceX, deviceY, deviceWidth, deviceHeight, 120);
+            ctx.fillStyle = '#f8f8f8';
+            ctx.fill();
+            
+            // Draw border
+            ctx.strokeStyle = '#d0d0d0';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Draw screenshot with smoothing
+            ctx.save();
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            drawRoundedRect(deviceX + 36, deviceY + 36, deviceWidth - 72, deviceHeight - 72, 84);
+            ctx.clip();
+            ctx.drawImage(img, deviceX + 36, deviceY + 36, deviceWidth - 72, deviceHeight - 72);
+            ctx.restore();
+            
+            // Zen line (use solid color instead of rgba)
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(baseWidth/2 - 60, baseHeight - 105);
+            ctx.lineTo(baseWidth/2 + 60, baseHeight - 105);
+            ctx.stroke();
+            
+            // Create final output at exact App Store size
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = baseWidth;
+            finalCanvas.height = baseHeight;
+            const finalCtx = finalCanvas.getContext('2d', { 
+                alpha: false,
+                desynchronized: true
+            });
+            
+            // Use best quality downsampling
+            finalCtx.imageSmoothingEnabled = true;
+            finalCtx.imageSmoothingQuality = 'high';
+            
+            // White background
+            finalCtx.fillStyle = '#FFFFFF';
+            finalCtx.fillRect(0, 0, baseWidth, baseHeight);
+            
+            // Draw the 3x canvas down to 1x with high quality
+            finalCtx.drawImage(
+                canvas, 
+                0, 0, canvas.width, canvas.height,  // source
+                0, 0, baseWidth, baseHeight         // destination
+            );
+            
+            // Convert to blob with maximum quality
+            finalCanvas.toBlob(blob => {
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `zen-tracker-calm-${index + 1}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                }
+            }, 'image/png', 1.0);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('screenshotsGrid');
+            
+            screenshotData.forEach((data, index) => {
+                const card = createScreenshotCard(data, index);
+                
+                card.addEventListener('click', function() {
+                    const btn = this.querySelector('.download-btn');
+                    btn.innerHTML = '⏳ Generating...';
+                    btn.style.opacity = '1';
+                    
+                    const img = this.querySelector('.screenshot-img');
+                    
+                    if (img.complete) {
+                        setTimeout(() => {
+                            downloadScreenshot(this, index);
+                            btn.innerHTML = '✓ Downloaded!';
+                            setTimeout(() => {
+                                btn.innerHTML = '⬇ Download Full Image';
+                                btn.style.opacity = '0';
+                            }, 2000);
+                        }, 100);
+                    } else {
+                        img.onload = () => {
+                            downloadScreenshot(this, index);
+                            btn.innerHTML = '✓ Downloaded!';
+                            setTimeout(() => {
+                                btn.innerHTML = '⬇ Download Full Image';
+                                btn.style.opacity = '0';
+                            }, 2000);
+                        };
+                    }
+                });
+                
+                grid.appendChild(card);
+            });
+        });
+    </script>
+</body>
+</html>

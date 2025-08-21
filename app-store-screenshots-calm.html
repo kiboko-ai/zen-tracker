@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zen Tracker - Calm App Store Screenshots</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 200;
+            font-size: 28px;
+            color: #333;
+            letter-spacing: 2px;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #999;
+            margin-bottom: 40px;
+            font-size: 13px;
+            font-weight: 300;
+        }
+
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .screenshot-wrapper {
+            background: white;
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: relative;
+            aspect-ratio: 1290 / 2796;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.04);
+            width: 430px;
+            height: 932px;
+        }
+
+        .screenshot-wrapper:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+
+        .screenshot-number {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(0,0,0,0.06);
+            color: #666;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .marketing-text {
+            padding: 80px 35px 50px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .marketing-title {
+            font-size: 36px;
+            font-weight: 300;
+            color: #222;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            line-height: 1.3;
+        }
+
+        .marketing-subtitle {
+            font-size: 16px;
+            font-weight: 300;
+            color: #888;
+            letter-spacing: 0.5px;
+            line-height: 1.5;
+        }
+
+        .device-frame {
+            flex: 1;
+            padding: 0 35px 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .device-container {
+            position: relative;
+            width: 100%;
+            max-width: 260px;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            border-radius: 40px;
+            border: 1px solid rgba(0,0,0,0.1);
+            padding: 12px;
+            box-shadow: 
+                0 2px 10px rgba(0,0,0,0.05),
+                0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        .screenshot-img {
+            width: 100%;
+            border-radius: 28px;
+            display: block;
+        }
+
+        /* Soft gradient backgrounds for each screenshot */
+        .screenshot-1 {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+        
+        .screenshot-2 {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        }
+
+        .screenshot-3 {
+            background: linear-gradient(135deg, #fafafa 0%, #f0f2f5 100%);
+        }
+
+        .screenshot-4 {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+        }
+
+        .screenshot-5 {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        }
+
+        /* Breathing animation */
+        @keyframes breathe {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Minimal decoration elements */
+        .decoration-circle {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,0,0,0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .screenshot-1 .decoration-circle {
+            top: 60px;
+            left: 30px;
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        .screenshot-2 .decoration-circle {
+            bottom: 80px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            animation: breathe 4s ease-in-out infinite 0.5s;
+        }
+
+        .screenshot-3 .decoration-circle {
+            top: 100px;
+            right: 40px;
+            width: 50px;
+            height: 50px;
+            animation: breathe 4s ease-in-out infinite 1s;
+        }
+
+        .screenshot-4 .decoration-circle {
+            bottom: 100px;
+            left: 40px;
+            width: 70px;
+            height: 70px;
+            animation: breathe 4s ease-in-out infinite 1.5s;
+        }
+
+        .screenshot-5 .decoration-circle {
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: breathe 4s ease-in-out infinite 2s;
+        }
+
+        /* Zen line decoration */
+        .zen-line {
+            position: absolute;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
+        }
+
+        /* Special styling for calm variations */
+        .screenshot-2 .marketing-title,
+        .screenshot-5 .marketing-title {
+            font-weight: 200;
+            letter-spacing: 2px;
+        }
+
+        /* Download section */
+        .download-section {
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+            border-radius: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .download-info {
+            margin-bottom: 25px;
+            color: #888;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .size-info {
+            display: inline-block;
+            background: rgba(0,0,0,0.04);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 13px;
+            color: #666;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        /* Subtle dot pattern */
+        .dot-pattern {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            opacity: 0.02;
+            background-image: radial-gradient(circle, #000 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 80px;
+            padding-top: 50px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            color: #aaa;
+            font-size: 13px;
+            font-weight: 300;
+        }
+
+        .app-name {
+            font-weight: 400;
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        /* Zen quote for each screenshot */
+        .zen-quote {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #bbb;
+            font-style: italic;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        /* Softer transitions */
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>zen tracker</h1>
+        <p class="instructions">
+            gentle • mindful • simple<br>
+            <span style="opacity: 0.6">Right-click to save each screenshot for App Store</span>
+        </p>
+
+        <div class="screenshots-grid">
+            <!-- Screenshot 1 -->
+            <div class="screenshot-wrapper screenshot-1">
+                <div class="screenshot-number">1</div>
+                <div class="decoration-circle"></div>
+                <div class="dot-pattern"></div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">begin your<br>journey</h2>
+                    <p class="marketing-subtitle">a moment of clarity awaits</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/1.png" 
+                             alt="Screenshot 1" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="zen-line"></div>
+            </div>
+
+            <!-- Screenshot 2 -->
+            <div class="screenshot-wrapper screenshot-2">
+                <div class="screenshot-number">2</div>
+                <div class="decoration-circle"></div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">find your<br>rhythm</h2>
+                    <p class="marketing-subtitle">small steps, lasting change</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/2.png" 
+                             alt="Screenshot 2" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="zen-line"></div>
+            </div>
+
+            <!-- Screenshot 3 -->
+            <div class="screenshot-wrapper screenshot-3">
+                <div class="screenshot-number">3</div>
+                <div class="decoration-circle"></div>
+                <div class="dot-pattern"></div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">cultivate<br>awareness</h2>
+                    <p class="marketing-subtitle">every moment counts</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/3.png" 
+                             alt="Screenshot 3" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="zen-line"></div>
+            </div>
+
+            <!-- Screenshot 4 -->
+            <div class="screenshot-wrapper screenshot-4">
+                <div class="screenshot-number">4</div>
+                <div class="decoration-circle"></div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">observe your<br>patterns</h2>
+                    <p class="marketing-subtitle">understand yourself better</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/4.png" 
+                             alt="Screenshot 4" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="zen-line"></div>
+            </div>
+
+            <!-- Screenshot 5 -->
+            <div class="screenshot-wrapper screenshot-5">
+                <div class="screenshot-number">5</div>
+                <div class="decoration-circle"></div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">embrace<br>simplicity</h2>
+                    <p class="marketing-subtitle">less noise, more peace</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/5.png" 
+                             alt="Screenshot 5" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="zen-line"></div>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <p class="download-info">
+                crafted with intention for your App Store presence<br>
+                <span class="size-info">iPhone 6.7" • 1290 × 2796 px • mindful design</span>
+            </p>
+        </div>
+
+        <footer>
+            <div class="app-name">zen tracker</div>
+            <div style="opacity: 0.7">mindful time • gentle progress</div>
+        </footer>
+    </div>
+
+    <script>
+        // Function to create and download screenshot using Canvas
+        function downloadScreenshot(wrapper, index) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size (App Store screenshot size)
+            const width = 1290;
+            const height = 2796;
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Get styles from the wrapper
+            const wrapperStyles = window.getComputedStyle(wrapper);
+            const bgColor = wrapperStyles.backgroundColor || 'white';
+            
+            // Draw rounded rectangle background
+            function drawRoundedRect(x, y, w, h, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + w - radius, y);
+                ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                ctx.lineTo(x + w, y + h - radius);
+                ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+                ctx.lineTo(x + radius, y + h);
+                ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+            }
+            
+            // Fill background with gradient or solid color
+            drawRoundedRect(0, 0, width, height, 60);
+            
+            // Set gradient based on screenshot number
+            const gradients = [
+                ['#ffffff', '#f8f9fa'],  // Screenshot 1
+                ['#f5f7fa', '#e9ecef'],  // Screenshot 2
+                ['#fafafa', '#f0f2f5'],  // Screenshot 3
+                ['#f8f9fa', '#e9ecef'],  // Screenshot 4
+                ['#e9ecef', '#dee2e6']   // Screenshot 5
+            ];
+            
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, gradients[index][0]);
+            gradient.addColorStop(1, gradients[index][1]);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Draw marketing text
+            const titles = [
+                ['begin your', 'journey'],
+                ['find your', 'rhythm'],
+                ['cultivate', 'awareness'],
+                ['observe your', 'patterns'],
+                ['embrace', 'simplicity']
+            ];
+            
+            const subtitles = [
+                'a moment of clarity awaits',
+                'small steps, lasting change',
+                'every moment counts',
+                'understand yourself better',
+                'less noise, more peace'
+            ];
+            
+            // Title text
+            ctx.fillStyle = '#222';
+            ctx.font = '300 108px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(titles[index][0], width/2, 320);
+            ctx.fillText(titles[index][1], width/2, 440);
+            
+            // Subtitle text
+            ctx.fillStyle = '#888';
+            ctx.font = '300 48px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText(subtitles[index], width/2, 540);
+            
+            // Load and draw device screenshot
+            const img = wrapper.querySelector('.screenshot-img');
+            if (img && img.complete) {
+                // Draw device frame
+                const deviceX = (width - 780) / 2;
+                const deviceY = 650;
+                const deviceWidth = 780;
+                const deviceHeight = 1690;
+                
+                // Device background with shadow
+                ctx.shadowColor = 'rgba(0,0,0,0.1)';
+                ctx.shadowBlur = 30;
+                ctx.shadowOffsetY = 10;
+                
+                drawRoundedRect(deviceX, deviceY, deviceWidth, deviceHeight, 120);
+                ctx.fillStyle = 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)';
+                ctx.fillStyle = '#f8f8f8';
+                ctx.fill();
+                
+                ctx.shadowColor = 'transparent';
+                
+                // Draw border
+                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Draw the actual screenshot
+                ctx.save();
+                drawRoundedRect(deviceX + 36, deviceY + 36, deviceWidth - 72, deviceHeight - 72, 84);
+                ctx.clip();
+                ctx.drawImage(img, deviceX + 36, deviceY + 36, deviceWidth - 72, deviceHeight - 72);
+                ctx.restore();
+            }
+            
+            // Add zen quote
+            const quotes = [
+                'breathe in peace',
+                'one breath at a time',
+                'presence is practice',
+                'growth in stillness',
+                'simply be'
+            ];
+            
+            ctx.fillStyle = '#bbb';
+            ctx.font = 'italic 300 33px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(quotes[index], width/2, height - 210);
+            
+            // Add zen line
+            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(width/2 - 60, height - 105);
+            ctx.lineTo(width/2 + 60, height - 105);
+            ctx.stroke();
+            
+            // Download the canvas as image
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `zen-tracker-calm-${index + 1}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 'image/png', 1.0);
+        }
+
+        // Add click handlers to each screenshot
+        document.querySelectorAll('.screenshot-wrapper').forEach((wrapper, index) => {
+            wrapper.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px) scale(1.01)';
+            });
+            
+            wrapper.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+            
+            // Add download button overlay
+            const downloadBtn = document.createElement('div');
+            downloadBtn.className = 'download-btn';
+            downloadBtn.innerHTML = '⬇ Download Full Image';
+            downloadBtn.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 25px;
+                font-size: 14px;
+                font-weight: 400;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                z-index: 10;
+                letter-spacing: 0.5px;
+            `;
+            wrapper.appendChild(downloadBtn);
+            
+            wrapper.addEventListener('mouseenter', function() {
+                downloadBtn.style.opacity = '1';
+            });
+            
+            wrapper.addEventListener('mouseleave', function() {
+                downloadBtn.style.opacity = '0';
+            });
+            
+            wrapper.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Show loading state
+                downloadBtn.innerHTML = '⏳ Generating...';
+                downloadBtn.style.opacity = '1';
+                
+                // Wait for image to be fully loaded
+                const img = this.querySelector('.screenshot-img');
+                if (img && !img.complete) {
+                    img.onload = () => {
+                        downloadScreenshot(this, index);
+                        downloadBtn.innerHTML = '✓ Downloaded!';
+                        
+                        setTimeout(() => {
+                            downloadBtn.innerHTML = '⬇ Download Full Image';
+                            downloadBtn.style.opacity = '0';
+                        }, 2000);
+                    };
+                } else {
+                    // Image already loaded
+                    setTimeout(() => {
+                        downloadScreenshot(this, index);
+                        downloadBtn.innerHTML = '✓ Downloaded!';
+                        
+                        setTimeout(() => {
+                            downloadBtn.innerHTML = '⬇ Download Full Image';
+                            downloadBtn.style.opacity = '0';
+                        }, 2000);
+                    }, 100);
+                }
+            });
+        });
+
+        // Add subtle floating animation to decoration circles
+        document.querySelectorAll('.decoration-circle').forEach((circle, index) => {
+            circle.style.animation = `breathe 4s ease-in-out infinite ${index * 0.5}s, float 6s ease-in-out infinite ${index * 0.3}s`;
+        });
+
+        // Add floating keyframe
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zen Tracker - App Store Screenshots</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: #f5f5f5;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 300;
+            font-size: 32px;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .screenshot-wrapper {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            position: relative;
+            aspect-ratio: 1290 / 2796;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 430px;
+            height: 932px;
+        }
+
+        .screenshot-wrapper:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+
+        .screenshot-number {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: black;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .marketing-text {
+            padding: 60px 30px 40px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .marketing-title {
+            font-size: 48px;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .marketing-subtitle {
+            font-size: 20px;
+            font-weight: 300;
+            color: #666;
+            letter-spacing: 0.2px;
+        }
+
+        .device-frame {
+            flex: 1;
+            padding: 0 30px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .device-container {
+            position: relative;
+            width: 100%;
+            max-width: 280px;
+            background: #f8f8f8;
+            border-radius: 35px;
+            border: 2px solid #000;
+            padding: 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .screenshot-img {
+            width: 100%;
+            border-radius: 25px;
+            display: block;
+        }
+
+        /* Different styles for each screenshot */
+        .screenshot-1 .marketing-title { }
+        
+        .screenshot-2 {
+            background: #000;
+        }
+        .screenshot-2 .marketing-title,
+        .screenshot-2 .marketing-subtitle {
+            color: #fff;
+        }
+        .screenshot-2 .marketing-subtitle {
+            opacity: 0.8;
+        }
+        .screenshot-2 .device-container {
+            border-color: #fff;
+            background: #222;
+        }
+        .screenshot-2 .screenshot-number {
+            background: white;
+            color: black;
+        }
+
+        .screenshot-3 {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+        }
+
+        .screenshot-4 {
+            background: #fff;
+            border: 2px solid #000;
+        }
+
+        .screenshot-5 {
+            background: #000;
+        }
+        .screenshot-5 .marketing-title,
+        .screenshot-5 .marketing-subtitle {
+            color: #fff;
+        }
+        .screenshot-5 .device-container {
+            border-color: #fff;
+            background: #222;
+        }
+        .screenshot-5 .screenshot-number {
+            background: white;
+            color: black;
+        }
+
+        /* Download button */
+        .download-section {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .download-info {
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .size-info {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* Minimal decoration elements */
+        .decoration-dots {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: #ddd;
+            border-radius: 50%;
+        }
+
+        .dot.active {
+            background: #000;
+            width: 20px;
+            border-radius: 3px;
+        }
+
+        .screenshot-2 .dot {
+            background: #555;
+        }
+        .screenshot-2 .dot.active {
+            background: #fff;
+        }
+
+        .screenshot-5 .dot {
+            background: #555;
+        }
+        .screenshot-5 .dot.active {
+            background: #fff;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid #e0e0e0;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .app-name {
+            font-weight: 600;
+            color: #000;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Zen Tracker App Store Screenshots</h1>
+        <p class="instructions">
+            Right-click on each screenshot and select "Save Image As..." to download<br>
+            Optimized for iPhone 6.7" Display (1290 × 2796)
+        </p>
+
+        <div class="screenshots-grid">
+            <!-- Screenshot 1 -->
+            <div class="screenshot-wrapper screenshot-1">
+                <div class="screenshot-number">1</div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">Focus<br>Deeply</h2>
+                    <p class="marketing-subtitle">Track what matters most</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/1.png" 
+                             alt="Screenshot 1" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="decoration-dots">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+
+            <!-- Screenshot 2 -->
+            <div class="screenshot-wrapper screenshot-2">
+                <div class="screenshot-number">2</div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">Stay<br>Mindful</h2>
+                    <p class="marketing-subtitle">Your personal zen tracker</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/2.png" 
+                             alt="Screenshot 2" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="decoration-dots">
+                    <div class="dot"></div>
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+
+            <!-- Screenshot 3 -->
+            <div class="screenshot-wrapper screenshot-3">
+                <div class="screenshot-number">3</div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">Build<br>Habits</h2>
+                    <p class="marketing-subtitle">One session at a time</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/3.png" 
+                             alt="Screenshot 3" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="decoration-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot active"></div>
+                </div>
+            </div>
+
+            <!-- Screenshot 4 -->
+            <div class="screenshot-wrapper screenshot-4">
+                <div class="screenshot-number">4</div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">Track<br>Progress</h2>
+                    <p class="marketing-subtitle">Visualize your journey</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/4.png" 
+                             alt="Screenshot 4" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="decoration-dots">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+
+            <!-- Screenshot 5 -->
+            <div class="screenshot-wrapper screenshot-5">
+                <div class="screenshot-number">5</div>
+                <div class="marketing-text">
+                    <h2 class="marketing-title">Pure<br>Simplicity</h2>
+                    <p class="marketing-subtitle">No distractions, just progress</p>
+                </div>
+                <div class="device-frame">
+                    <div class="device-container">
+                        <img src="file:///Users/jason/Documents/Zen Screen Shots For Appstore/5.png" 
+                             alt="Screenshot 5" 
+                             class="screenshot-img">
+                    </div>
+                </div>
+                <div class="decoration-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot active"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <p class="download-info">
+                These screenshots are styled for App Store submission<br>
+                <span class="size-info">iPhone 6.7" Display • 1290 × 2796 pixels</span>
+            </p>
+        </div>
+
+        <footer>
+            <div class="app-name">Zen Tracker</div>
+            <div>Minimalist Time Tracking</div>
+        </footer>
+    </div>
+
+    <script>
+        // Function to download screenshot as image
+        function downloadScreenshot(element, filename) {
+            // Temporarily set a white background for the capture
+            const originalBg = document.body.style.background;
+            document.body.style.background = 'white';
+            
+            // Set scale for high quality
+            const scale = 3; // 3x resolution for retina displays
+            
+            html2canvas(element, {
+                scale: scale,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null,
+                width: 430,
+                height: 932,
+                logging: false,
+                onclone: function(clonedDoc) {
+                    // Ensure the cloned element maintains its styles
+                    const clonedElement = clonedDoc.querySelector('.screenshot-wrapper');
+                    if (clonedElement) {
+                        clonedElement.style.transform = 'none';
+                    }
+                }
+            }).then(canvas => {
+                // Restore original background
+                document.body.style.background = originalBg;
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.download = filename;
+                
+                // Convert to high quality PNG
+                canvas.toBlob(function(blob) {
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                }, 'image/png', 1.0);
+            }).catch(err => {
+                console.error('Error capturing screenshot:', err);
+                document.body.style.background = originalBg;
+            });
+        }
+
+        // Add click handlers to each screenshot
+        document.querySelectorAll('.screenshot-wrapper').forEach((wrapper, index) => {
+            // Add download button overlay
+            const downloadBtn = document.createElement('div');
+            downloadBtn.className = 'download-btn';
+            downloadBtn.innerHTML = '⬇ Download Full Image';
+            downloadBtn.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.9);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 25px;
+                font-size: 14px;
+                font-weight: 500;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                z-index: 10;
+                letter-spacing: 0.5px;
+            `;
+            wrapper.appendChild(downloadBtn);
+            
+            wrapper.addEventListener('mouseenter', function() {
+                downloadBtn.style.opacity = '1';
+            });
+            
+            wrapper.addEventListener('mouseleave', function() {
+                downloadBtn.style.opacity = '0';
+            });
+            
+            wrapper.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const filenames = [
+                    'zen-tracker-modern-1-focus.png',
+                    'zen-tracker-modern-2-mindful.png',
+                    'zen-tracker-modern-3-habits.png',
+                    'zen-tracker-modern-4-progress.png',
+                    'zen-tracker-modern-5-simple.png'
+                ];
+                
+                // Show loading state
+                downloadBtn.innerHTML = '⏳ Generating...';
+                downloadBtn.style.opacity = '1';
+                
+                // Capture and download
+                setTimeout(() => {
+                    downloadScreenshot(this, filenames[index]);
+                    downloadBtn.innerHTML = '✓ Downloaded!';
+                    
+                    setTimeout(() => {
+                        downloadBtn.innerHTML = '⬇ Download Full Image';
+                        downloadBtn.style.opacity = '0';
+                    }, 2000);
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
