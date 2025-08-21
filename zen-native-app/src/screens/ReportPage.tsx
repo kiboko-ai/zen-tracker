@@ -518,13 +518,15 @@ export default function ReportPage() {
           </View>
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No activities recorded yet</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Home')}
-              style={styles.startTrackingButton}
-            >
-              <Text style={styles.startTrackingText}>Start Tracking</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptyText}>No activities recorded</Text>
+            {isToday && (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Home')}
+                style={styles.startTrackingButton}
+              >
+                <Text style={styles.startTrackingText}>Start Tracking</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </ScrollView>
