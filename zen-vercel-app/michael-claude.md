@@ -2,7 +2,7 @@
 
 **작업자**: Michael & Claude  
 **작업일**: 2025년 8월 26일 화요일  
-**작업시간**: 15:53
+**작업시간**: 15:53 - 16:30
 
 ## 📋 프로젝트 개요
 Zen Tracker 모바일 앱의 소개 페이지를 Vercel에 배포하기 위한 Next.js 웹사이트 개발
@@ -106,4 +106,55 @@ zen-vercel-app/
 
 ---
 
-*이 문서는 2025년 8월 26일 15:53분 기준으로 작성되었습니다.*
+## 📝 추가 작업 내역 (16:00 - 16:30)
+
+### 디자인 개선 사항
+1. **전체 다크 테마 적용**
+   - 전체 배경을 완전한 블랙(#000)으로 통일
+   - 모든 텍스트를 화이트(#fff)로 변경
+   - Footer 전체를 화이트 배경으로 대비 효과
+
+2. **섹션 구분선 제거**
+   - Hero 섹션 하단 구분선 제거
+   - Comprehensive Reports 상단 구분선 제거  
+   - Download 섹션 상단 구분선 제거
+
+3. **버튼 스타일 최적화**
+   - Coming Soon 버튼들의 가시성 개선
+   - "Android (Coming Soon)" → "Google Play (Coming Soon)"으로 텍스트 통일
+   - 비활성 버튼 색상을 밝은 회색(#888)으로 조정
+
+4. **아이콘 변경**
+   - Feature 섹션의 이모지를 블랙 앤 화이트 기하학적 심볼로 교체
+   - ⏱️ → ◯ (Easy Time Tracking)
+   - 📊 → ▦ (Insightful Reports)
+   - 🎯 → ◎ (Goal Setting)
+   - 🌙 → ◐ (Minimalist Design)
+   - 📱 → ▣ (Works Offline)
+   - 🔒 → ◉ (Privacy First)
+
+5. **문구 변경**
+   - "Simple Yet Powerful" → "Simple Yet Essential"로 변경
+
+### 기술적 수정 사항
+1. **.gitignore 정리**
+   - 상위 디렉토리에 .gitignore 파일 생성
+   - zen-vercel-app과 zen-native-app의 node_modules 등 제외 설정
+
+2. **빌드 에러 해결**
+   - yarn build 시 상위 디렉토리의 손상된 package.json 제거
+   - 빌드 성공 확인
+
+3. **링크 비활성화**
+   - Footer Links 섹션의 Privacy Policy, Terms of Service, Support 링크 비활성화
+   - `<span>` 태그로 변경하고 cursor: not-allowed 적용
+
+### 최종 상태
+- 완전한 블랙 앤 화이트 미니멀 디자인 구현
+- 모든 섹션이 통일된 디자인 시스템 적용
+- 실제 앱 스크린샷과 조화로운 웹사이트 완성
+- Vercel 배포 준비 완료
+
+---
+
+*이 문서는 2025년 8월 26일 16:30분 기준으로 최종 업데이트되었습니다.*
