@@ -146,11 +146,12 @@ export default function TimerPage() {
   const formatTimeDisplay = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600)
     const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const secs = totalSeconds % 60
     
     if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}`
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }
-    return `${minutes}:${(totalSeconds % 60).toString().padStart(2, '0')}`
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
   const progress = targetSeconds > 0 ? Math.min((seconds / targetSeconds) * 100, 100) : 0
@@ -294,7 +295,7 @@ export default function TimerPage() {
               >
                 {() => (
                   <View style={styles.timerContent}>
-                    <Text style={styles.timeText}>
+                    <Text style={[styles.timeText, seconds >= 3600 && styles.timeTextSmall]}>
                       {formatTimeDisplay(seconds)}
                     </Text>
                     {targetSeconds > 0 && (
@@ -499,6 +500,9 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '200',
     marginBottom: 8,
+  },
+  timeTextSmall: {
+    fontSize: 36,
   },
   targetText: {
     fontSize: 14,
