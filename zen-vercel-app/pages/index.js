@@ -80,26 +80,38 @@ export default function Home() {
           <p className={styles.sectionDescription}>
             Get started in seconds with our simple setup process
           </p>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <img 
+              src="/onboarding-demo.gif" 
+              alt="Zen App Demo" 
+              style={{ 
+                maxWidth: '10%', 
+                height: 'auto', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              }} 
+            />
+          </div>
           <div className={styles.onboardingSteps}>
             <div className={styles.onboardingStep}>
               <img src="/screenshots/1_zen.png" alt="Welcome Screen" className={styles.onboardingImage} />
-              <h3>Welcome</h3>
-              <p>A clean, minimalist start to your focus journey</p>
+              {/* <h3>Welcome</h3> */}
+              {/* <p>A clean, minimalist start to your focus journey</p> */}
             </div>
             <div className={styles.onboardingStep}>
               <img src="/screenshots/2_zen.png" alt="Create Activities" className={styles.onboardingImage} />
-              <h3>Create Activities</h3>
-              <p>Track different types of work</p>
+              {/* <h3>Create Activities</h3> */}
+              {/* <p>Track different types of work</p> */}
             </div>
             <div className={styles.onboardingStep}>
               <img src="/screenshots/3_zen.png" alt="Set Target" className={styles.onboardingImage} />
-              <h3>Set Your Target</h3>
-              <p>Choose your focus duration or go unlimited</p>
+              {/* <h3>Set Your Target</h3> */}
+              {/* <p>Choose your focus duration or go unlimited</p> */}
             </div>
             <div className={styles.onboardingStep}>
               <img src="/screenshots/4_zen.png" alt="Track Progress" className={styles.onboardingImage} />
-              <h3>Track Progress</h3>
-              <p>View your focus history and build consistency</p>
+              {/* <h3>Track Progress</h3> */}
+              {/* <p>View your focus history and build consistency</p> */}
             </div>
           </div>
         </section>
