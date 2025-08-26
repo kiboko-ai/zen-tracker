@@ -1,0 +1,12 @@
+{
+  "name": "zen-tracker",
+  "version": "1.0.0",
+  "description": "Zen Tracker Application",
+  "scripts": {
+    "dev": "echo 'Please run dev in specific subdirectories'",
+    "build": "echo 'Please run build in specific subdirectories'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
