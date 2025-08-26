@@ -105,35 +105,35 @@ export default function Home() {
         </section>
 
         <section id="features" className={styles.features}>
-          <h2>Simple Yet Powerful</h2>
+          <h2>Simple Yet Essential</h2>
           <div className={styles.featureGrid}>
             <div className={styles.featureCard}>
-              <div className={styles.featureIcon}>⏱️</div>
+              <div className={styles.featureIcon}>◯</div>
               <h3>Easy Time Tracking</h3>
               <p>Start and stop timers with a single tap. No complicated setup required.</p>
             </div>
             <div className={styles.featureCard}>
-              <div className={styles.featureIcon}>📊</div>
+              <div className={styles.featureIcon}>▦</div>
               <h3>Insightful Reports</h3>
               <p>Visualize your time with beautiful charts and detailed statistics.</p>
             </div>
             <div className={styles.featureCard}>
-              <div className={styles.featureIcon}>🎯</div>
+              <div className={styles.featureIcon}>◎</div>
               <h3>Goal Setting</h3>
               <p>Set daily targets and track your progress towards your goals.</p>
             </div>
             <div className={styles.featureCard}>
-              <div className={styles.featureIcon}>🌙</div>
+              <div className={styles.featureIcon}>◐</div>
               <h3>Minimalist Design</h3>
               <p>Clean, distraction-free interface that helps you focus on what matters.</p>
             </div>
             <div className={styles.featureCard}>
-              <div className={styles.featureIcon}>📱</div>
+              <div className={styles.featureIcon}>▣</div>
               <h3>Works Offline</h3>
               <p>Track your time anywhere, anytime. No internet connection required.</p>
             </div>
             <div className={styles.featureCard}>
-              <div className={styles.featureIcon}>🔒</div>
+              <div className={styles.featureIcon}>◉</div>
               <h3>Privacy First</h3>
               <p>Your data stays on your device. No accounts, no cloud, no tracking.</p>
             </div>
@@ -177,9 +177,9 @@ export default function Home() {
           </div>
           <div className={styles.footerSection}>
             <h4>Links</h4>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Support</a>
+            <span style={{color: '#666', display: 'block', marginBottom: '0.5rem', cursor: 'not-allowed'}}>Privacy Policy</span>
+            <span style={{color: '#666', display: 'block', marginBottom: '0.5rem', cursor: 'not-allowed'}}>Terms of Service</span>
+            <span style={{color: '#666', display: 'block', marginBottom: '0.5rem', cursor: 'not-allowed'}}>Support</span>
           </div>
           <div className={styles.footerSection}>
             <h4>Contact</h4>
