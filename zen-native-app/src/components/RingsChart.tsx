@@ -74,7 +74,7 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
 
   const renderHourMarkers = () => {
     const markers = [];
-    const outerRadius = center - 30; // 시간 표시를 더 안쪽으로
+    const outerRadius = center - 50; // 시간 표시를 도넛에 더 가깝게
     
     // Add tick marks for all 24 hours
     for (let i = 0; i < 24; i++) {
@@ -101,8 +101,8 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
       
       // Only add text for major markers (every 3 hours)
       if (isMajor) {
-        // Position text with more spacing
-        const textRadius = outerRadius + 20; // 더 많은 여백
+        // Position text closer to the donut
+        const textRadius = outerRadius + 12; // 도넛에 더 가깝게
         const textX = center + textRadius * Math.cos(angleRad);
         const textY = center + textRadius * Math.sin(angleRad);
         
