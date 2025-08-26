@@ -157,4 +157,57 @@ zen-vercel-app/
 
 ---
 
-*이 문서는 2025년 8월 26일 16:30분 기준으로 최종 업데이트되었습니다.*
+## 📝 추가 작업 내역 (16:30 - 16:45)
+
+### Privacy Policy & Support 페이지 구현
+
+1. **마크다운 기반 페이지 시스템 구축**
+   - `/public/content/` 폴더 구조 생성
+   - 마크다운 파일을 자동으로 HTML로 변환하는 시스템 구현
+   - 클라이언트 사이드에서 마크다운 fetch 및 렌더링
+
+2. **Privacy Policy 페이지**
+   - `/pages/privacy-policy.js` 생성
+   - `/public/content/privacy-policy.md` 마크다운 파일 연동
+   - 기본 Privacy Policy 내용 작성 (privacy-first 접근 강조)
+   - URL: `/privacy-policy`
+
+3. **Support 페이지**
+   - `/pages/support.js` 생성
+   - `/public/content/support.md` 마크다운 파일 연동
+   - URL: `/support`
+
+4. **공통 스타일링**
+   - `/styles/PrivacyPolicy.module.css` 생성
+   - 블랙 배경에 화이트 텍스트 (메인 테마와 일치)
+   - 상단 네비게이션 바 (홈으로 돌아가기 버튼 포함)
+   - 하단 Footer 화이트 배경 유지
+
+5. **Footer 링크 업데이트**
+   - Privacy Policy: 활성화 (마크다운 페이지 연결)
+   - Support: 활성화 (마크다운 페이지 연결)
+   - Terms of Service: 완전 제거
+
+### 기술적 구현 세부사항
+- 마크다운 변환: 기본 정규식 사용 (#, ##, ###, *, ** 등 지원)
+- useEffect 훅을 통한 클라이언트 사이드 데이터 fetching
+- dangerouslySetInnerHTML을 통한 HTML 렌더링
+- 404 에러 핸들링 (파일이 없을 경우 안내 메시지)
+
+### 파일 구조 업데이트
+```
+zen-vercel-app/
+├── pages/
+│   ├── privacy-policy.js    # Privacy Policy 페이지
+│   └── support.js           # Support 페이지
+├── public/
+│   └── content/            # 마크다운 콘텐츠 폴더
+│       ├── privacy-policy.md
+│       └── support.md
+└── styles/
+    └── PrivacyPolicy.module.css  # 공통 스타일
+```
+
+---
+
+*이 문서는 2025년 8월 26일 16:45분 기준으로 최종 업데이트되었습니다.*
