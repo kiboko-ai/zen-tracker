@@ -1,0 +1,521 @@
+.container {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+}
+
+.nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.navContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #000;
+}
+
+.navLinks {
+  display: flex;
+  gap: 2rem;
+}
+
+.navLinks a {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.navLinks a:hover {
+  color: #000;
+  font-weight: 500;
+}
+
+.main {
+  padding-top: 60px;
+}
+
+.hero {
+  padding: 4rem 2rem;
+  text-align: center;
+  background: #000;
+  color: white;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.title {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+.description {
+  font-size: 1.25rem;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  opacity: 0.9;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.primaryButton {
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  background: white;
+  color: #000;
+  border: 2px solid white;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+  background: #000;
+  color: #fff;
+}
+
+.secondaryButton {
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #888;
+  border: 2px solid #444;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  border-color: #999;
+}
+
+.secondaryButton:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  color: #888;
+}
+
+.screenshotCarousel {
+  margin-top: 3rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.screenshotContainer {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.screenshot {
+  width: 250px;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s;
+}
+
+.screenshot:hover {
+  transform: translateY(-10px) scale(1.02);
+}
+
+.onboarding {
+  padding: 4rem 2rem;
+  background: #000;
+  color: #fff;
+}
+
+.onboarding h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.sectionDescription {
+  text-align: center;
+  color: #aaa;
+  font-size: 1.125rem;
+  margin-bottom: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.onboardingSteps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.onboardingStep {
+  text-align: center;
+  padding: 1.5rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 15px;
+  transition: transform 0.3s;
+}
+
+.onboardingStep:hover {
+  transform: translateY(-5px);
+}
+
+.onboardingImage {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  border-radius: 15px;
+  margin-bottom: 1rem;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.onboardingStep h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.onboardingStep p {
+  color: #aaa;
+  font-size: 0.95rem;
+}
+
+.features {
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #000;
+}
+
+.features h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #fff;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.featureCard {
+  padding: 2rem;
+  background: #1a1a1a;
+  border-radius: 10px;
+  border: 1px solid #333;
+  transition: transform 0.3s, border-color 0.3s;
+}
+
+.featureCard:hover {
+  transform: translateY(-5px);
+  border-color: #666;
+  background: #222;
+}
+
+.featureIcon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.featureCard h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.featureCard p {
+  color: #aaa;
+  line-height: 1.6;
+}
+
+.howItWorks {
+  padding: 4rem 2rem;
+  background: #000;
+}
+
+.howItWorks h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.interfaceShowcase {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.modeComparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+.lightMode, .darkMode {
+  text-align: center;
+}
+
+.lightMode h3, .darkMode h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.modeScreenshot {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s;
+}
+
+.modeScreenshot:hover {
+  transform: scale(1.05);
+}
+
+.reportViews {
+  text-align: center;
+  padding-top: 2rem;
+}
+
+.reportViews h3 {
+  font-size: 1.75rem;
+  margin-bottom: 2rem;
+  color: #fff;
+}
+
+.reportScreenshots {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.reportScreenshot {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s;
+}
+
+.reportScreenshot:hover {
+  transform: scale(1.05);
+}
+
+.download {
+  padding: 4rem 2rem;
+  text-align: center;
+  background: #000;
+  color: white;
+}
+
+.download h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.downloadDescription {
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.downloadButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.appStoreButton, .playStoreButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2rem;
+  min-width: 200px;
+  background: white;
+  border-radius: 10px;
+  color: black;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: 2px solid white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.appStoreButton:hover, .playStoreButton:hover:not(:disabled) {
+  transform: scale(1.05);
+  background: #000;
+  color: #fff;
+}
+
+.playStoreButton:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #444;
+  color: #888;
+}
+
+.footer {
+  background: white;
+  color: #000;
+  padding: 3rem 2rem 1rem;
+}
+
+.footerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footerSection h4 {
+  margin-bottom: 1rem;
+  color: #000;
+}
+
+.footerSection p, .footerSection a {
+  color: #666;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.footerSection a:hover {
+  color: #000;
+  font-weight: 500;
+}
+
+.footerBottom {
+  text-align: center;
+  padding-top: 2rem;
+  margin-top: 2rem;
+  border-top: 1px solid #e0e0e0;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 2rem;
+  }
+  
+  .subtitle {
+    font-size: 1.5rem;
+  }
+
+  .description {
+    font-size: 1.125rem;
+  }
+
+  .navLinks {
+    display: none;
+  }
+
+  .screenshotContainer {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .screenshot {
+    width: 200px;
+  }
+  
+  .onboardingSteps {
+    grid-template-columns: 1fr;
+  }
+  
+  .modeComparison {
+    grid-template-columns: 1fr;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .step {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .ctaButtons {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .primaryButton, .secondaryButton {
+    width: 100%;
+  }
+  
+  .downloadButtons {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .appStoreButton, .playStoreButton {
+    width: 100%;
+    max-width: 300px;
+  }
+}

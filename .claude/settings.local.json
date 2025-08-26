@@ -8,8 +8,12 @@
       "Bash(npm install)",
       "Bash(lsof:*)",
       "Bash(rm:*)",
-      "Bash(pod install:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }
