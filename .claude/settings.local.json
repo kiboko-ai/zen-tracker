@@ -7,7 +7,9 @@
       "Bash(find:*)",
       "Bash(npm install)",
       "Bash(lsof:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(pod install:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }

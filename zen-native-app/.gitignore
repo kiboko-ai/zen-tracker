@@ -55,6 +55,9 @@ build/
 *.swo
 *~
 
+# Claude Code settings
+.claude/
+
 # macOS
 .DS_Store
 .AppleDouble
