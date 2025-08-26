@@ -1,0 +1,20 @@
+# zen-vercel-app specific
+zen-vercel-app/node_modules/
+zen-vercel-app/.next/
+zen-vercel-app/out/
+zen-vercel-app/.vercel/
+zen-vercel-app/*.log
+
+# zen-native-app specific
+zen-native-app/node_modules/
+zen-native-app/.expo/
+zen-native-app/dist/
+zen-native-app/.expo-shared/
+
+# General
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env*.local
