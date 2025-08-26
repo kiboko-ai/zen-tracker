@@ -1,0 +1,114 @@
+.container {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+}
+
+.nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.navContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #000;
+  cursor: pointer;
+}
+
+.backButton {
+  padding: 0.5rem 1.5rem;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: transform 0.2s;
+}
+
+.backButton:hover {
+  transform: translateY(-2px);
+}
+
+.main {
+  padding: 100px 2rem 4rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.main h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  font-weight: 300;
+}
+
+.content {
+  line-height: 1.8;
+}
+
+.lastUpdated {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.content section {
+  margin-bottom: 2rem;
+}
+
+.content h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 400;
+}
+
+.content p {
+  margin-bottom: 1rem;
+  color: #ccc;
+}
+
+.content a {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.content a:hover {
+  opacity: 0.8;
+}
+
+.footer {
+  background: #fff;
+  color: #000;
+  padding: 2rem;
+  text-align: center;
+  margin-top: 4rem;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 80px 1.5rem 3rem;
+  }
+  
+  .main h1 {
+    font-size: 2rem;
+  }
+  
+  .content h2 {
+    font-size: 1.25rem;
+  }
+}

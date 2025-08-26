@@ -177,9 +177,8 @@ export default function Home() {
           </div>
           <div className={styles.footerSection}>
             <h4>Links</h4>
-            <span style={{color: '#666', display: 'block', marginBottom: '0.5rem', cursor: 'not-allowed'}}>Privacy Policy</span>
-            <span style={{color: '#666', display: 'block', marginBottom: '0.5rem', cursor: 'not-allowed'}}>Terms of Service</span>
-            <span style={{color: '#666', display: 'block', marginBottom: '0.5rem', cursor: 'not-allowed'}}>Support</span>
+            <a href="/privacy-policy">Privacy Policy</a>
+            <a href="/support">Support</a>
           </div>
           <div className={styles.footerSection}>
             <h4>Contact</h4>
