@@ -262,6 +262,7 @@ export default function HomePage() {
         renderItem={renderActivity}
         containerStyle={styles.listContainer}
         activationDistance={editMode ? 10 : 999999}
+        showsVerticalScrollIndicator={false}
       />
 
       {showAddModal && (
