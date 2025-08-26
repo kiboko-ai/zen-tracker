@@ -7,7 +7,12 @@
       "Bash(find:*)",
       "Bash(npm install)",
       "Bash(lsof:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }
