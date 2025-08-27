@@ -246,7 +246,7 @@ export default function TimerPage() {
                     itemTextStyle={styles.androidWheelText}
                     selectedIndicatorStyle={styles.androidSelectedIndicator}
                     itemHeight={45}
-                    visibleRest={2}
+                    visibleRest={1}
                     decelerationRate="fast"
                   />
                   <Text style={styles.androidPickerLabel}>hours</Text>
@@ -265,7 +265,7 @@ export default function TimerPage() {
                     itemTextStyle={styles.androidWheelText}
                     selectedIndicatorStyle={styles.androidSelectedIndicator}
                     itemHeight={45}
-                    visibleRest={2}
+                    visibleRest={1}
                     decelerationRate="fast"
                   />
                   <Text style={styles.androidPickerLabel}>minutes</Text>
