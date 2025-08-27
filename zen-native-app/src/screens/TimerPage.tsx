@@ -245,8 +245,9 @@ export default function TimerPage() {
                     containerStyle={styles.androidWheelContainer}
                     itemTextStyle={styles.androidWheelText}
                     selectedIndicatorStyle={styles.androidSelectedIndicator}
-                    itemHeight={60}
+                    itemHeight={45}
                     visibleRest={2}
+                    decelerationRate="fast"
                   />
                   <Text style={styles.androidPickerLabel}>hours</Text>
                 </View>
@@ -263,8 +264,9 @@ export default function TimerPage() {
                     containerStyle={styles.androidWheelContainer}
                     itemTextStyle={styles.androidWheelText}
                     selectedIndicatorStyle={styles.androidSelectedIndicator}
-                    itemHeight={60}
+                    itemHeight={45}
                     visibleRest={2}
+                    decelerationRate="fast"
                   />
                   <Text style={styles.androidPickerLabel}>minutes</Text>
                 </View>
@@ -607,36 +609,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 30,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 20,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 16,
   },
   androidPickerWrapper: {
     alignItems: 'center',
   },
   androidWheelContainer: {
     width: 90,
-    height: 180,
+    height: 135,
   },
   androidWheelText: {
-    fontSize: 26,
+    fontSize: 24,
     color: '#111827',
     fontWeight: '300',
+    lineHeight: 45,
   },
   androidSelectedIndicator: {
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    height: 45,
   },
   androidPickerSeparator: {
     fontSize: 28,
