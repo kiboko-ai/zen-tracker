@@ -16,6 +16,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { AnimatedCircularProgress } from 'react-native-circular-progress'
 import { Picker } from '@react-native-picker/picker'
+import WheelPicker from 'react-native-wheely'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 import BackgroundTimer from '../services/BackgroundTimer'
@@ -197,7 +198,7 @@ export default function TimerPage() {
             <Text style={styles.targetLabel}>Set your target time</Text>
             
             {Platform.OS === 'ios' ? (
-              // Picker-based UI (iOS timer style)
+              // iOS - Native Picker
               <View>
                 <View style={styles.pickerContainer}>
                   <View style={styles.pickerWrapper}>
@@ -234,34 +235,40 @@ export default function TimerPage() {
                 </View>
               </View>
             ) : (
-              // Android fallback to original input
-              <View style={styles.timeInputContainer}>
-                <View style={styles.timeInputGroup}>
-                  <TextInput
-                    value={targetHours.toString()}
-                    onChangeText={(text) => setTargetHours(Math.max(0, Math.min(23, parseInt(text) || 0)))}
-                    style={styles.timeInput}
-                    keyboardType="numeric"
-                    maxLength={2}
+              // Android - WheelPicker
+              <View style={styles.androidPickerContainer}>
+                <View style={styles.androidPickerWrapper}>
+                  <WheelPicker
+                    selectedIndex={targetHours}
+                    options={[...Array(24)].map((_, i) => i.toString().padStart(2, '0'))}
+                    onChange={(index) => setTargetHours(index)}
+                    containerStyle={styles.androidWheelContainer}
+                    itemTextStyle={styles.androidWheelText}
+                    selectedIndicatorStyle={styles.androidSelectedIndicator}
+                    itemHeight={45}
+                    visibleRest={1}
+                    decelerationRate="fast"
                   />
-                  <Text style={styles.timeLabel}>hours</Text>
+                  <Text style={styles.androidPickerLabel}>hours</Text>
                 </View>
-                <Text style={styles.timeSeparator}>:</Text>
-                <View style={styles.timeInputGroup}>
-                  <TextInput
-                    value={targetHours === 0 && targetMinutes === 0 ? '∞' : targetMinutes.toString()}
-                    onChangeText={(text) => {
-                      if (text === '∞') {
-                        setTargetMinutes(0)
-                      } else {
-                        setTargetMinutes(Math.max(0, Math.min(59, parseInt(text) || 0)))
-                      }
-                    }}
-                    style={styles.timeInput}
-                    keyboardType="numeric"
-                    maxLength={2}
+                
+                <Text style={styles.androidPickerSeparator}>:</Text>
+                
+                <View style={styles.androidPickerWrapper}>
+                  <WheelPicker
+                    selectedIndex={targetMinutes}
+                    options={[...Array(60)].map((_, i) => 
+                      targetHours === 0 && i === 0 ? '∞' : i.toString().padStart(2, '0')
+                    )}
+                    onChange={(index) => setTargetMinutes(index)}
+                    containerStyle={styles.androidWheelContainer}
+                    itemTextStyle={styles.androidWheelText}
+                    selectedIndicatorStyle={styles.androidSelectedIndicator}
+                    itemHeight={45}
+                    visibleRest={1}
+                    decelerationRate="fast"
                   />
-                  <Text style={styles.timeLabel}>minutes</Text>
+                  <Text style={styles.androidPickerLabel}>minutes</Text>
                 </View>
               </View>
             )}
@@ -596,5 +603,47 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 8,
     fontWeight: '300',
+  },
+  androidPickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 30,
+    padding: 20,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 16,
+  },
+  androidPickerWrapper: {
+    alignItems: 'center',
+  },
+  androidWheelContainer: {
+    width: 90,
+    height: 135,
+  },
+  androidWheelText: {
+    fontSize: 24,
+    color: '#111827',
+    fontWeight: '300',
+    lineHeight: 45,
+  },
+  androidSelectedIndicator: {
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    height: 45,
+  },
+  androidPickerSeparator: {
+    fontSize: 28,
+    fontWeight: '200',
+    marginHorizontal: 12,
+    color: '#111827',
+  },
+  androidPickerLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 8,
+    fontWeight: '400',
   },
 })
