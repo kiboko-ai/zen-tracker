@@ -180,6 +180,74 @@ class NotificationService {
   }
 
   /**
+   * Schedule hourly notifications for infinity mode (no target time)
+   * @param activityName Name of the activity
+   * @returns Notification ID or null if no permission
+   */
+  async scheduleHourlyNotification(
+    activityName: string
+  ): Promise<string | null> {
+    if (!this.hasPermission) {
+      console.log('No notification permission');
+      return null;
+    }
+
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '⏱️ One hour passed',
+        body: `You've been focusing on ${activityName} for an hour. Great persistence!`,
+        sound: true,
+        data: { 
+          type: 'hourly_check',
+          activityName
+        },
+      },
+      trigger: {
+        seconds: 3600, // 1 hour
+        repeats: true,
+      },
+    });
+
+    return notificationId;
+  }
+
+  /**
+   * Schedule a notification at 2x target time
+   * @param activityName Name of the activity
+   * @param targetMinutes Original target time in minutes
+   * @returns Notification ID or null if no permission
+   */
+  async scheduleDoubleTargetNotification(
+    activityName: string,
+    targetMinutes: number
+  ): Promise<string | null> {
+    if (!this.hasPermission) {
+      console.log('No notification permission');
+      return null;
+    }
+
+    const doubleMinutes = targetMinutes * 2;
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🔥 Double your target!',
+        body: `Amazing! You've been focusing on ${activityName} for ${doubleMinutes} minutes - that's 2x your goal!`,
+        sound: true,
+        badge: 1,
+        data: { 
+          type: 'double_target',
+          activityName,
+          targetMinutes: doubleMinutes
+        },
+      },
+      trigger: {
+        seconds: doubleMinutes * 60,
+      },
+    });
+
+    return notificationId;
+  }
+
+  /**
    * Schedule a session completion notification
    * @param activityName Name of the activity
    * @param totalMinutes Total session time in minutes

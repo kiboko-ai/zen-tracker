@@ -104,6 +104,31 @@ export const useNotifications = (): UseNotificationsReturn => {
     [hasPermission]
   );
 
+  const scheduleHourlyNotification = useCallback(
+    async (activityName: string): Promise<string | null> => {
+      if (!hasPermission) {
+        console.log('No permission for hourly notifications');
+        return null;
+      }
+      return await NotificationService.scheduleHourlyNotification(activityName);
+    },
+    [hasPermission]
+  );
+
+  const scheduleDoubleTargetNotification = useCallback(
+    async (activityName: string, targetMinutes: number): Promise<string | null> => {
+      if (!hasPermission) {
+        console.log('No permission for double target notifications');
+        return null;
+      }
+      return await NotificationService.scheduleDoubleTargetNotification(
+        activityName,
+        targetMinutes
+      );
+    },
+    [hasPermission]
+  );
+
   const cancelNotification = useCallback(async (notificationId: string): Promise<void> => {
     await NotificationService.cancelNotification(notificationId);
   }, []);
@@ -135,6 +160,8 @@ export const useNotifications = (): UseNotificationsReturn => {
     scheduleGoalNotification,
     scheduleCheckInReminder,
     scheduleCompletionNotification,
+    scheduleHourlyNotification,
+    scheduleDoubleTargetNotification,
     cancelNotification,
     cancelAllNotifications,
     startLiveActivity,

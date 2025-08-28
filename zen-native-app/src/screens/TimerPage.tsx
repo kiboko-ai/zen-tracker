@@ -42,6 +42,8 @@ export default function TimerPage() {
     scheduleGoalNotification,
     scheduleCheckInReminder,
     scheduleCompletionNotification,
+    scheduleHourlyNotification,
+    scheduleDoubleTargetNotification,
     cancelNotification,
     cancelAllNotifications,
     startLiveActivity
@@ -56,7 +58,10 @@ export default function TimerPage() {
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false)
   const [checkInNotificationId, setCheckInNotificationId] = useState<string | null>(null)
   const [goalNotificationId, setGoalNotificationId] = useState<string | null>(null)
+  const [hourlyNotificationId, setHourlyNotificationId] = useState<string | null>(null)
+  const [doubleTargetNotificationId, setDoubleTargetNotificationId] = useState<string | null>(null)
   const [hasNotifiedGoal, setHasNotifiedGoal] = useState(false)
+  const [hasNotifiedDouble, setHasNotifiedDouble] = useState(false)
   const [liveActivityId, setLiveActivityId] = useState<string | null>(null)
   
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -88,6 +93,11 @@ export default function TimerPage() {
             // Mark goal as notified when reached (notification already scheduled at start)
             if (!hasNotifiedGoal) {
               setHasNotifiedGoal(true)
+            }
+            
+            // Mark double target as notified when reached
+            if (elapsed >= targetSeconds * 2 && !hasNotifiedDouble) {
+              setHasNotifiedDouble(true)
             }
           }
         }
@@ -144,21 +154,33 @@ export default function TimerPage() {
     pausedDurationRef.current = 0
     completionDotAnim.setValue(0) // Reset completion dot
     setHasNotifiedGoal(false) // Reset goal notification flag
+    setHasNotifiedDouble(false) // Reset double target notification flag
     setIsRunning(true)
     setShowTargetPicker(false)
     
-    // Schedule goal achievement notification for background support
-    if (activity && targetSeconds > 0 && hasPermission) {
-      const targetMinutes = Math.floor(targetSeconds / 60)
-      // Schedule the notification to fire after target seconds
-      const notifId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
-      setGoalNotificationId(notifId)
-    }
-    
-    // Schedule check-in reminder for long sessions (30 minutes)
-    if (activity && targetSeconds >= 1800) {
-      const notificationId = await scheduleCheckInReminder(activity.name, 30)
-      setCheckInNotificationId(notificationId)
+    if (activity && hasPermission) {
+      if (targetSeconds > 0) {
+        // Has target time: schedule goal and 2x notifications
+        const targetMinutes = Math.floor(targetSeconds / 60)
+        
+        // Schedule goal achievement notification
+        const goalId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
+        setGoalNotificationId(goalId)
+        
+        // Schedule 2x target notification
+        const doubleId = await scheduleDoubleTargetNotification(activity.name, targetMinutes)
+        setDoubleTargetNotificationId(doubleId)
+        
+        // Schedule check-in reminder for sessions >= 30 minutes
+        if (targetSeconds >= 1800) {
+          const checkInId = await scheduleCheckInReminder(activity.name, 30)
+          setCheckInNotificationId(checkInId)
+        }
+      } else {
+        // Infinity mode (00:00): schedule hourly notifications
+        const hourlyId = await scheduleHourlyNotification(activity.name)
+        setHourlyNotificationId(hourlyId)
+      }
     }
     
     // Start Live Activity (iOS 16.1+, no permission needed)
@@ -191,17 +213,28 @@ export default function TimerPage() {
       setCheckInNotificationId(null)
     }
     
+    if (hourlyNotificationId) {
+      await cancelNotification(hourlyNotificationId)
+      setHourlyNotificationId(null)
+    }
+    
     if (goalNotificationId && !hasNotifiedGoal) {
       // Cancel goal notification if not yet achieved
       await cancelNotification(goalNotificationId)
       setGoalNotificationId(null)
     }
     
-    // Send completion notification
-    if (activity && seconds > 0) {
-      const totalMinutes = Math.floor(seconds / 60)
-      await scheduleCompletionNotification(activity.name, totalMinutes)
+    if (doubleTargetNotificationId && !hasNotifiedDouble) {
+      // Cancel double target notification if not yet achieved
+      await cancelNotification(doubleTargetNotificationId)
+      setDoubleTargetNotificationId(null)
     }
+    
+    // Send completion notification - TEMPORARILY DISABLED
+    // if (activity && seconds > 0) {
+    //   const totalMinutes = Math.floor(seconds / 60)
+    //   await scheduleCompletionNotification(activity.name, totalMinutes)
+    // }
     
     // End Live Activity if exists
     // TODO: Implement when Live Activity native module is ready

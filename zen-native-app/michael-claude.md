@@ -307,6 +307,77 @@ graph LR
 - 모든 경고 억제 설정 적용
 - expo-notifications 0.28.19 통합 완료
 
+### 6. 추가 알림 기능 구현 ✅
+
+#### A. 무한 타이머 모드 (00:00) 
+- **기능**: 목표 시간 미설정 시 매 시간마다 알림
+- **구현**: `scheduleHourlyNotification()` - 1시간마다 반복
+- **메시지**: "⏱️ One hour passed - You've been focusing on [활동명] for an hour. Great persistence!"
+
+#### B. 2배 목표 달성 알림
+- **기능**: 설정한 목표 시간의 2배 도달 시 알림 (타이머 실행 중일 때만)
+- **구현**: `scheduleDoubleTargetNotification()` - 목표 x2 시간에 발송
+- **메시지**: "🔥 Double your target! - Amazing! You've been focusing on [활동명] for X minutes - that's 2x your goal!"
+
+#### C. 세션 완료 알림 (일시 비활성화)
+- **상태**: 주석 처리로 비활성화 (`TimerPage.tsx:234-237`)
+- **활성화 방법**: 주석 제거
+
+### 7. 알림 메시지 수정 가이드 📝
+
+각 알림 유형별 메시지 수정 위치:
+
+#### 목표 달성 알림
+```typescript
+// src/services/notifications/NotificationService.ts (line 99-101)
+title: '🎯 Goal Achieved!',
+body: `Congratulations! You've completed ${targetMinutes} minutes of ${activityName}.`,
+```
+
+#### 체크인 알림 (30분마다)
+```typescript
+// src/services/notifications/NotificationService.ts (line 164-165)
+title: '⏱️ Still focusing?',
+body: `You've been working on ${activityName} for ${intervalMinutes} minutes. Keep going!`,
+```
+
+#### 시간당 알림 (무한 모드)
+```typescript
+// src/services/notifications/NotificationService.ts (line 197-198)
+title: '⏱️ One hour passed',
+body: `You've been focusing on ${activityName} for an hour. Great persistence!`,
+```
+
+#### 2배 목표 달성 알림
+```typescript
+// src/services/notifications/NotificationService.ts (line 232-233)
+title: '🔥 Double your target!',
+body: `Amazing! You've been focusing on ${activityName} for ${doubleMinutes} minutes - that's 2x your goal!`,
+```
+
+#### 세션 완료 알림 (비활성화됨)
+```typescript
+// src/services/notifications/NotificationService.ts (line 268-269)
+title: '✅ Session Complete',
+body: `Great job! You've completed ${totalMinutes} minutes of ${activityName}.`,
+```
+
+### 8. 권한 거부 시 표시 메시지
+```typescript
+// src/hooks/useNotifications.ts (line 49-50)
+'Notifications Disabled',
+'You have declined push notifications. To receive goal achievement alerts, please enable notifications in Settings.'
+```
+
+### 9. 에러 해결 기록
+
+#### NotificationHandler 중복 호출 문제
+- **증상**: `TypeError: undefined is not a function` at App.tsx:49
+- **원인**: `Notifications.setNotificationHandler` 중복 호출
+  - 파일 최상위 (line 6-12)
+  - initialize() 메서드 (line 39-45)
+- **해결**: 중복 제거 필요
+
 ---
 
 ## 작업 실현 가능성 분석
