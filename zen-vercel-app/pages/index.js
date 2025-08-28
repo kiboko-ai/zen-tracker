@@ -15,14 +15,14 @@ export default function Home() {
         <meta property="og:url" content="https://zen-tracker.vercel.app/" />
         <meta property="og:title" content="Zen - Minimalist Focus Timer for Deep Work" />
         <meta property="og:description" content="Track your daily activities and build better habits with Zen - a minimalist time tracking app for iOS." />
-        <meta property="og:image" content="https://zen-tracker.vercel.app/screenshots/6_zen.png" />
+        <meta property="og:image" content="https://zen-tracker.vercel.app/screenshots/12_zen.png" />
         
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://zen-tracker.vercel.app/" />
         <meta property="twitter:title" content="Zen - Minimalist Focus Timer for Deep Work" />
         <meta property="twitter:description" content="Track your daily activities and build better habits with Zen - a minimalist time tracking app for iOS." />
-        <meta property="twitter:image" content="https://zen-tracker.vercel.app/screenshots/6_zen.png" />
+        <meta property="twitter:image" content="https://zen-tracker.vercel.app/screenshots/12_zen.png" />
         
         {/* Apple App Store */}
         <meta name="apple-itunes-app" content="app-id=6749873242" />
@@ -68,38 +68,50 @@ export default function Home() {
           <div className={styles.screenshotCarousel}>
             <div className={styles.screenshotContainer}>
               <img src="/screenshots/5_zen.png" alt="Zen App First Screen" className={styles.screenshot} />
-              <img src="/screenshots/6_zen.png" alt="Zen App Home Screen" className={styles.screenshot} />
+              <img src="/screenshots/12_zen.png" alt="Zen App Home Screen" className={styles.screenshot} />
               <img src="/screenshots/7_zen.png" alt="Zen Timer Screen" className={styles.screenshot} />
-              <img src="/screenshots/8_zen.png" alt="Zen Report Screen" className={styles.screenshot} />
+              <img src="/screenshots/13_zen.png" alt="Zen Report Screen" className={styles.screenshot} />
             </div>
           </div>
         </section>
 
         <section className={styles.onboarding}>
-          <h2>Intuitive Onboarding</h2>
+          <h2>Stay Headache-Free</h2>
           <p className={styles.sectionDescription}>
             Get started in seconds with our simple setup process
           </p>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <img 
+              src="/onboarding-demo.gif" 
+              alt="Zen App Demo" 
+              style={{ 
+                maxWidth: '10%', 
+                height: 'auto', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              }} 
+            />
+          </div>
           <div className={styles.onboardingSteps}>
             <div className={styles.onboardingStep}>
               <img src="/screenshots/1_zen.png" alt="Welcome Screen" className={styles.onboardingImage} />
-              <h3>Welcome</h3>
-              <p>A clean, minimalist start to your focus journey</p>
+              {/* <h3>Welcome</h3> */}
+              {/* <p>A clean, minimalist start to your focus journey</p> */}
             </div>
             <div className={styles.onboardingStep}>
               <img src="/screenshots/2_zen.png" alt="Create Activities" className={styles.onboardingImage} />
-              <h3>Create Activities</h3>
-              <p>Track different types of work</p>
+              {/* <h3>Create Activities</h3> */}
+              {/* <p>Track different types of work</p> */}
             </div>
             <div className={styles.onboardingStep}>
               <img src="/screenshots/3_zen.png" alt="Set Target" className={styles.onboardingImage} />
-              <h3>Set Your Target</h3>
-              <p>Choose your focus duration or go unlimited</p>
+              {/* <h3>Set Your Target</h3> */}
+              {/* <p>Choose your focus duration or go unlimited</p> */}
             </div>
             <div className={styles.onboardingStep}>
               <img src="/screenshots/4_zen.png" alt="Track Progress" className={styles.onboardingImage} />
-              <h3>Track Progress</h3>
-              <p>View your focus history and build consistency</p>
+              {/* <h3>Track Progress</h3> */}
+              {/* <p>View your focus history and build consistency</p> */}
             </div>
           </div>
         </section>
@@ -147,8 +159,8 @@ export default function Home() {
               Track your progress with beautiful visualizations. View daily, weekly, monthly, and yearly statistics to understand your focus patterns.
             </p>
             <div className={styles.reportScreenshots}>
-              <img src="/screenshots/8_zen.png" alt="Timeline View" className={styles.reportScreenshot} />
-              <img src="/screenshots/9_zen.png" alt="Rings View" className={styles.reportScreenshot} />
+              <img src="/screenshots/13_zen.png" alt="Timeline View" className={styles.reportScreenshot} />
+              <img src="/screenshots/14_zen.png" alt="Rings View" className={styles.reportScreenshot} />
             </div>
           </div>
         </section>

@@ -10,6 +10,7 @@ import ReportPage from './src/screens/ReportPage'
 import OnboardingPage from './src/screens/OnboardingPage'
 import { OnboardingTutorial } from './src/components/OnboardingTutorial'
 import { useStore } from './src/store/store'
+import NotificationService from './src/services/notifications/NotificationService'
 
 export type RootStackParamList = {
   Onboarding: undefined
@@ -30,18 +31,22 @@ export default function App() {
   const shouldShowOnboarding = isFirstTime && activities.length === 0
 
   useEffect(() => {
-    checkFirstLaunch()
+    initializeApp()
   }, [])
 
-  const checkFirstLaunch = async () => {
+  const initializeApp = async () => {
     try {
+      // Initialize notification service
+      await NotificationService.getInstance().initialize()
+      
+      // Check if this is first launch
       const hasSeenTutorial = await AsyncStorage.getItem('hasSeenTutorial')
       if (!hasSeenTutorial) {
         setShowTutorial(true)
       }
       setIsLoading(false)
     } catch (error) {
-      console.error('Error checking first launch:', error)
+      console.error('Error initializing app:', error)
       setIsLoading(false)
     }
   }
