@@ -7,6 +7,11 @@
     "locales": {
       "en": "./locales/en.json"
     },
+    "notification": {
+      "iosDisplayInForeground": true,
+      "androidMode": "default",
+      "androidCollapsedTitle": "Zen Tracker"
+    },
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -19,7 +24,11 @@
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.anonymous.zenapp"
+      "bundleIdentifier": "com.anonymous.zenapp",
+      "infoPlist": {
+        "NSUserNotificationUsageDescription": "This app uses notifications to remind you of your focus sessions and goal achievements.",
+        "NSSupportsLiveActivities": false
+      }
     },
     "android": {
       "adaptiveIcon": {

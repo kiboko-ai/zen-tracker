@@ -61,6 +61,13 @@
     <string>Light</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>fetch</string>
+      <string>processing</string>
+    </array>
+    <key>NSUserNotificationUsageDescription</key>
+    <string>This app uses notifications to remind you of your focus sessions and goal achievements.</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
   </dict>
