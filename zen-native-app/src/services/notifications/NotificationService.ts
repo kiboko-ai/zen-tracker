@@ -280,6 +280,109 @@ class NotificationService {
   }
 
   /**
+   * Schedule a daily reminder notification at 9:00 AM local time
+   * 매일 오전 9시에 앱 사용 권유 알림을 설정합니다
+   * @returns Notification ID or null if no permission
+   * @note This notification repeats daily at 9:00 AM based on device's local time
+   * @note If a daily reminder already exists, it will be cancelled and replaced
+   */
+  async scheduleDailyReminder(): Promise<string | null> {
+    if (!this.hasPermission) {
+      console.log('No notification permission for daily reminder');
+      return null;
+    }
+
+    try {
+      // 기존 일일 리마인더 알림 취소 (중복 방지)
+      // Cancel existing daily reminders to prevent duplicates
+      const existingNotifications = await Notifications.getAllScheduledNotificationsAsync();
+      const existingDailyReminders = existingNotifications.filter(
+        notif => notif.content.data?.type === 'daily_reminder'
+      );
+      
+      // 기존 일일 리마인더가 있으면 모두 취소
+      for (const reminder of existingDailyReminders) {
+        await this.cancelNotification(reminder.identifier);
+        console.log('Cancelled existing daily reminder:', reminder.identifier);
+      }
+
+      // 매일 오전 9시 알림 스케줄링
+      // Schedule notification for 9:00 AM daily
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🌟 Time to Focus!',
+          body: 'Start your day with a focused session. What will you work on today?',
+          sound: true,
+          badge: 1,
+          data: { 
+            type: 'daily_reminder',
+            scheduledAt: new Date().toISOString(),
+            hour: 9,
+            minute: 0
+          },
+        },
+        trigger: {
+          hour: 9,      // 오전 9시 (24시간 형식)
+          minute: 0,    // 정각
+          repeats: true // 매일 반복
+        },
+      });
+
+      console.log('Daily reminder scheduled successfully:', notificationId);
+      return notificationId;
+    } catch (error) {
+      console.error('Failed to schedule daily reminder:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Cancel the daily reminder notification
+   * 일일 리마인더 알림을 취소합니다
+   * @returns true if cancelled successfully, false otherwise
+   */
+  async cancelDailyReminder(): Promise<boolean> {
+    try {
+      const existingNotifications = await Notifications.getAllScheduledNotificationsAsync();
+      const dailyReminders = existingNotifications.filter(
+        notif => notif.content.data?.type === 'daily_reminder'
+      );
+      
+      if (dailyReminders.length === 0) {
+        console.log('No daily reminder to cancel');
+        return false;
+      }
+
+      for (const reminder of dailyReminders) {
+        await this.cancelNotification(reminder.identifier);
+        console.log('Daily reminder cancelled:', reminder.identifier);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to cancel daily reminder:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if daily reminder is currently scheduled
+   * 일일 리마인더가 현재 스케줄되어 있는지 확인합니다
+   * @returns true if daily reminder is scheduled, false otherwise
+   */
+  async isDailyReminderScheduled(): Promise<boolean> {
+    try {
+      const existingNotifications = await Notifications.getAllScheduledNotificationsAsync();
+      return existingNotifications.some(
+        notif => notif.content.data?.type === 'daily_reminder'
+      );
+    } catch (error) {
+      console.error('Failed to check daily reminder status:', error);
+      return false;
+    }
+  }
+
+  /**
    * Cancel a scheduled notification
    * @param notificationId The ID of the notification to cancel
    */
@@ -299,6 +402,27 @@ class NotificationService {
    */
   async getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
     return await Notifications.getAllScheduledNotificationsAsync();
+  }
+
+  /**
+   * Schedule a notification with custom content (for testing)
+   * 테스트용 커스텀 알림 스케줄링
+   * @param content Notification content object
+   * @returns Notification ID or null if no permission
+   */
+  async scheduleNotificationAsync(options: Notifications.NotificationRequestInput): Promise<string | null> {
+    if (!this.hasPermission) {
+      console.log('No notification permission for custom notification');
+      return null;
+    }
+    
+    try {
+      const notificationId = await Notifications.scheduleNotificationAsync(options);
+      return notificationId;
+    } catch (error) {
+      console.error('Failed to schedule custom notification:', error);
+      return null;
+    }
   }
 
   /**

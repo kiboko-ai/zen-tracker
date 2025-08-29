@@ -37,7 +37,28 @@ export default function App() {
   const initializeApp = async () => {
     try {
       // Initialize notification service
-      await NotificationService.getInstance().initialize()
+      await NotificationService.initialize()
+      
+      // 일일 리마인더 설정 (매일 오전 9시)
+      // Schedule daily reminder at 9:00 AM if permission exists
+      const hasPermission = NotificationService.hasNotificationPermission()
+      if (hasPermission) {
+        // 이미 스케줄되어 있는지 확인
+        // Check if daily reminder is already scheduled
+        const isScheduled = await NotificationService.isDailyReminderScheduled()
+        if (!isScheduled) {
+          // 스케줄되어 있지 않으면 새로 설정
+          // Schedule if not already set
+          const reminderId = await NotificationService.scheduleDailyReminder()
+          if (reminderId) {
+            console.log('Daily reminder scheduled at 9:00 AM:', reminderId)
+          }
+        } else {
+          console.log('Daily reminder already scheduled')
+        }
+      } else {
+        console.log('No notification permission - skipping daily reminder')
+      }
       
       // Check if this is first launch
       const hasSeenTutorial = await AsyncStorage.getItem('hasSeenTutorial')
