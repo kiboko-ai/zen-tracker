@@ -11,6 +11,9 @@ interface UseNotificationsReturn {
   scheduleGoalNotification: (activityName: string, targetMinutes: number) => Promise<string | null>;
   scheduleCheckInReminder: (activityName: string, intervalMinutes?: number) => Promise<string | null>;
   scheduleCompletionNotification: (activityName: string, totalMinutes: number) => Promise<string | null>;
+  scheduleDailyReminder: () => Promise<string | null>;
+  cancelDailyReminder: () => Promise<boolean>;
+  isDailyReminderScheduled: () => Promise<boolean>;
   cancelNotification: (notificationId: string) => Promise<void>;
   cancelAllNotifications: () => Promise<void>;
   startLiveActivity: (activityName: string, targetMinutes: number) => Promise<string | null>;
@@ -129,6 +132,42 @@ export const useNotifications = (): UseNotificationsReturn => {
     [hasPermission]
   );
 
+  /**
+   * Schedule daily reminder at 9:00 AM
+   * 매일 오전 9시에 앱 사용 권유 알림을 설정합니다
+   * @returns Notification ID or null if no permission
+   */
+  const scheduleDailyReminder = useCallback(
+    async (): Promise<string | null> => {
+      if (!hasPermission) {
+        console.log('No permission for daily reminder');
+        // Daily reminder 는 중요하지 않으므로 alert 표시하지 않음
+        // Don't show alert for daily reminder as it's not critical
+        return null;
+      }
+      return await NotificationService.scheduleDailyReminder();
+    },
+    [hasPermission]
+  );
+
+  /**
+   * Cancel the daily reminder notification
+   * 일일 리마인더 알림을 취소합니다
+   * @returns true if cancelled successfully
+   */
+  const cancelDailyReminder = useCallback(async (): Promise<boolean> => {
+    return await NotificationService.cancelDailyReminder();
+  }, []);
+
+  /**
+   * Check if daily reminder is scheduled
+   * 일일 리마인더가 스케줄되어 있는지 확인합니다
+   * @returns true if scheduled
+   */
+  const isDailyReminderScheduled = useCallback(async (): Promise<boolean> => {
+    return await NotificationService.isDailyReminderScheduled();
+  }, []);
+
   const cancelNotification = useCallback(async (notificationId: string): Promise<void> => {
     await NotificationService.cancelNotification(notificationId);
   }, []);
@@ -162,6 +201,9 @@ export const useNotifications = (): UseNotificationsReturn => {
     scheduleCompletionNotification,
     scheduleHourlyNotification,
     scheduleDoubleTargetNotification,
+    scheduleDailyReminder,        // 일일 리마인더 스케줄링
+    cancelDailyReminder,          // 일일 리마인더 취소
+    isDailyReminderScheduled,     // 일일 리마인더 상태 확인
     cancelNotification,
     cancelAllNotifications,
     startLiveActivity,

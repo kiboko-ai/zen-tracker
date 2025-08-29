@@ -44,6 +44,8 @@ export default function TimerPage() {
     scheduleCompletionNotification,
     scheduleHourlyNotification,
     scheduleDoubleTargetNotification,
+    scheduleDailyReminder,         // 일일 리마인더 스케줄링 함수 추가
+    isDailyReminderScheduled,      // 일일 리마인더 상태 확인 함수 추가
     cancelNotification,
     cancelAllNotifications,
     startLiveActivity
@@ -144,6 +146,20 @@ export default function TimerPage() {
       if (!granted) {
         // Show permission denied message but continue with timer
         showPermissionDeniedAlert()
+      } else {
+        // 권한이 승인되면 일일 리마인더도 자동으로 설정
+        // If permission granted, also schedule daily reminder
+        try {
+          const isScheduled = await isDailyReminderScheduled()
+          if (!isScheduled) {
+            const reminderId = await scheduleDailyReminder()
+            if (reminderId) {
+              console.log('Daily reminder auto-scheduled after permission grant:', reminderId)
+            }
+          }
+        } catch (error) {
+          console.error('Failed to schedule daily reminder:', error)
+        }
       }
     }
     
