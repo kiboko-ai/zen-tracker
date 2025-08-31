@@ -128,8 +128,8 @@ class NotificationService {
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '🎯 Goal Achieved!',
-        body: `Congratulations! You've completed ${targetMinutes} minutes of ${activityName}.`,
+        title: 'Zen Tracker',
+        body: `You've completed ${targetMinutes} minutes of ${activityName}.`,
         sound: true,
         badge: 1,
         data: { 
@@ -161,8 +161,8 @@ class NotificationService {
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '⏱️ Still focusing?',
-        body: `You've been working on ${activityName} for ${intervalMinutes} minutes. Keep going!`,
+        title: 'Zen Tracker',
+        body: `You've been working on ${activityName} for ${intervalMinutes} minutes.`,
         sound: true,
         data: { 
           type: 'session_check_in',
@@ -194,8 +194,8 @@ class NotificationService {
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '⏱️ One hour passed',
-        body: `You've been focusing on ${activityName} for an hour. Great persistence!`,
+        title: 'Zen Tracker',
+        body: `You've been focusing on ${activityName} for an hour.`,
         sound: true,
         data: { 
           type: 'hourly_check',
@@ -229,8 +229,8 @@ class NotificationService {
     const doubleMinutes = targetMinutes * 2;
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '🔥 Double your target!',
-        body: `Amazing! You've been focusing on ${activityName} for ${doubleMinutes} minutes - that's 2x your goal!`,
+        title: 'Zen Tracker',
+        body: `You've been focusing on ${activityName} for ${doubleMinutes} minutes - 2x your goal`,
         sound: true,
         badge: 1,
         data: { 
@@ -263,8 +263,8 @@ class NotificationService {
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '✅ Session Complete',
-        body: `Great job! You've completed ${totalMinutes} minutes of ${activityName}.`,
+        title: 'Zen Tracker',
+        body: `You've completed ${totalMinutes} minutes of ${activityName}.`,
         sound: true,
         badge: 1,
         data: { 
