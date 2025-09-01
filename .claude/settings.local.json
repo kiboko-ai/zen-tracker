@@ -14,7 +14,15 @@
       "Bash(npm cache clean:*)",
       "Bash(npx create-next-app:*)",
       "Bash(npm run dev:*)",
-      "Bash(yarn build)"
+      "Bash(yarn build)",
+      "Bash(npx expo install:*)",
+      "Bash(pod install:*)",
+      "Bash(npx expo prebuild:*)",
+      "Bash(git restore:*)",
+      "Bash(killall:*)",
+      "Bash(xcrun simctl shutdown:*)",
+      "Bash(pod deintegrate:*)",
+      "Bash(open /Users/michael/Documents/GitHub/zen-tracker/zen-native-app/ios/ZenApp.xcworkspace)"
     ],
     "deny": []
   }

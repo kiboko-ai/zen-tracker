@@ -20,6 +20,7 @@ import WheelPicker from 'react-native-wheely'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 import BackgroundTimer from '../services/BackgroundTimer'
+import { useNotifications } from '../hooks/useNotifications'
 
 type TimerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Timer'>
 type TimerScreenRouteProp = RouteProp<RootStackParamList, 'Timer'>
@@ -34,12 +35,37 @@ export default function TimerPage() {
   const { activities, startSession, pauseSession, resumeSession, endSession, currentSession, updateActivity } = useStore()
   const activity = activities.find(a => a.id === activityId)
   
+  // Notification hooks
+  const {
+    hasPermission,
+    requestPermission,
+    showPermissionDeniedAlert,
+    scheduleGoalNotification,
+    scheduleCheckInReminder,
+    scheduleCompletionNotification,
+    scheduleHourlyNotification,
+    scheduleDoubleTargetNotification,
+    scheduleDailyReminder,         // 일일 리마인더 스케줄링 함수 추가
+    isDailyReminderScheduled,      // 일일 리마인더 상태 확인 함수 추가
+    cancelNotification,
+    cancelAllNotifications,
+    startLiveActivity
+  } = useNotifications()
+  
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [targetHours, setTargetHours] = useState(activity?.lastTargetHours || 0)
   const [targetMinutes, setTargetMinutes] = useState(activity?.lastTargetMinutes || 0)
   const [showTargetPicker, setShowTargetPicker] = useState(true)
+  const [hasRequestedPermission, setHasRequestedPermission] = useState(false)
+  const [checkInNotificationId, setCheckInNotificationId] = useState<string | null>(null)
+  const [goalNotificationId, setGoalNotificationId] = useState<string | null>(null)
+  const [hourlyNotificationId, setHourlyNotificationId] = useState<string | null>(null)
+  const [doubleTargetNotificationId, setDoubleTargetNotificationId] = useState<string | null>(null)
+  const [hasNotifiedGoal, setHasNotifiedGoal] = useState(false)
+  const [hasNotifiedDouble, setHasNotifiedDouble] = useState(false)
+  const [liveActivityId, setLiveActivityId] = useState<string | null>(null)
   
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
@@ -66,6 +92,16 @@ export default function TimerPage() {
               tension: 40,
               useNativeDriver: true,
             }).start()
+            
+            // Mark goal as notified when reached (notification already scheduled at start)
+            if (!hasNotifiedGoal) {
+              setHasNotifiedGoal(true)
+            }
+            
+            // Mark double target as notified when reached
+            if (elapsed >= targetSeconds * 2 && !hasNotifiedDouble) {
+              setHasNotifiedDouble(true)
+            }
           }
         }
       }, 1000)
@@ -102,15 +138,73 @@ export default function TimerPage() {
     ]).start()
   }, [isRunning])
 
-  const handleStart = () => {
+  const handleStart = async () => {
+    // Request notification permission on first timer start
+    if (!hasRequestedPermission && !hasPermission) {
+      const granted = await requestPermission()
+      setHasRequestedPermission(true)
+      
+      if (!granted) {
+        // Show permission denied message but continue with timer
+        showPermissionDeniedAlert()
+      } else {
+        // 권한이 승인되면 일일 리마인더도 자동으로 설정
+        // If permission granted, also schedule daily reminder
+        try {
+          const isScheduled = await isDailyReminderScheduled()
+          if (!isScheduled) {
+            const reminderId = await scheduleDailyReminder()
+            if (reminderId) {
+              console.log('Daily reminder auto-scheduled after permission grant:', reminderId)
+            }
+          }
+        } catch (error) {
+          console.error('Failed to schedule daily reminder:', error)
+        }
+      }
+    }
+    
     const targetDuration = targetSeconds > 0 ? targetSeconds * 1000 : undefined
     startSession(activityId, targetDuration)
     updateActivity(activityId, { lastTargetHours: targetHours, lastTargetMinutes: targetMinutes })
     startTimeRef.current = new Date()
     pausedDurationRef.current = 0
     completionDotAnim.setValue(0) // Reset completion dot
+    setHasNotifiedGoal(false) // Reset goal notification flag
+    setHasNotifiedDouble(false) // Reset double target notification flag
     setIsRunning(true)
     setShowTargetPicker(false)
+    
+    if (activity && hasPermission) {
+      if (targetSeconds > 0) {
+        // Has target time: schedule goal and 2x notifications
+        const targetMinutes = Math.floor(targetSeconds / 60)
+        
+        // Schedule goal achievement notification
+        const goalId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
+        setGoalNotificationId(goalId)
+        
+        // Schedule 2x target notification
+        const doubleId = await scheduleDoubleTargetNotification(activity.name, targetMinutes)
+        setDoubleTargetNotificationId(doubleId)
+        
+        // Schedule check-in reminder for sessions >= 30 minutes
+        if (targetSeconds >= 1800) {
+          const checkInId = await scheduleCheckInReminder(activity.name, 30)
+          setCheckInNotificationId(checkInId)
+        }
+      } else {
+        // Infinity mode (00:00): schedule hourly notifications
+        const hourlyId = await scheduleHourlyNotification(activity.name)
+        setHourlyNotificationId(hourlyId)
+      }
+    }
+    
+    // Start Live Activity (iOS 16.1+, no permission needed)
+    if (activity && targetSeconds > 0) {
+      const activityId = await startLiveActivity(activity.name, Math.floor(targetSeconds / 60))
+      setLiveActivityId(activityId)
+    }
   }
 
   const handlePause = () => {
@@ -129,7 +223,39 @@ export default function TimerPage() {
     setIsPaused(false)
   }
 
-  const handleStop = () => {
+  const handleStop = async () => {
+    // Cancel all scheduled notifications
+    if (checkInNotificationId) {
+      await cancelNotification(checkInNotificationId)
+      setCheckInNotificationId(null)
+    }
+    
+    if (hourlyNotificationId) {
+      await cancelNotification(hourlyNotificationId)
+      setHourlyNotificationId(null)
+    }
+    
+    if (goalNotificationId && !hasNotifiedGoal) {
+      // Cancel goal notification if not yet achieved
+      await cancelNotification(goalNotificationId)
+      setGoalNotificationId(null)
+    }
+    
+    if (doubleTargetNotificationId && !hasNotifiedDouble) {
+      // Cancel double target notification if not yet achieved
+      await cancelNotification(doubleTargetNotificationId)
+      setDoubleTargetNotificationId(null)
+    }
+    
+    // Send completion notification - TEMPORARILY DISABLED
+    // if (activity && seconds > 0) {
+    //   const totalMinutes = Math.floor(seconds / 60)
+    //   await scheduleCompletionNotification(activity.name, totalMinutes)
+    // }
+    
+    // End Live Activity if exists
+    // TODO: Implement when Live Activity native module is ready
+    
     endSession()
     navigation.navigate('Report')
   }
