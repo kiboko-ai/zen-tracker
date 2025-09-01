@@ -10,6 +10,7 @@ import ReportPage from './src/screens/ReportPage'
 import OnboardingPage from './src/screens/OnboardingPage'
 import { OnboardingTutorial } from './src/components/OnboardingTutorial'
 import { useStore } from './src/store/store'
+import NotificationService from './src/services/notifications/NotificationService'
 
 export type RootStackParamList = {
   Onboarding: undefined
@@ -30,18 +31,43 @@ export default function App() {
   const shouldShowOnboarding = isFirstTime && activities.length === 0
 
   useEffect(() => {
-    checkFirstLaunch()
+    initializeApp()
   }, [])
 
-  const checkFirstLaunch = async () => {
+  const initializeApp = async () => {
     try {
+      // Initialize notification service
+      await NotificationService.initialize()
+      
+      // 일일 리마인더 설정 (매일 오전 9시)
+      // Schedule daily reminder at 9:00 AM if permission exists
+      const hasPermission = NotificationService.hasNotificationPermission()
+      if (hasPermission) {
+        // 이미 스케줄되어 있는지 확인
+        // Check if daily reminder is already scheduled
+        const isScheduled = await NotificationService.isDailyReminderScheduled()
+        if (!isScheduled) {
+          // 스케줄되어 있지 않으면 새로 설정
+          // Schedule if not already set
+          const reminderId = await NotificationService.scheduleDailyReminder()
+          if (reminderId) {
+            console.log('Daily reminder scheduled at 9:00 AM:', reminderId)
+          }
+        } else {
+          console.log('Daily reminder already scheduled')
+        }
+      } else {
+        console.log('No notification permission - skipping daily reminder')
+      }
+      
+      // Check if this is first launch
       const hasSeenTutorial = await AsyncStorage.getItem('hasSeenTutorial')
       if (!hasSeenTutorial) {
         setShowTutorial(true)
       }
       setIsLoading(false)
     } catch (error) {
-      console.error('Error checking first launch:', error)
+      console.error('Error initializing app:', error)
       setIsLoading(false)
     }
   }
