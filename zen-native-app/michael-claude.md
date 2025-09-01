@@ -825,3 +825,126 @@ graph TD
 - 현재 "Coming Soon" 상태
 - Native Module 구현 필요
 - iOS 16.1+ 에서만 작동
+
+---
+
+## 2024-11-29 작업 내용
+
+### 매일 오전 9시 앱 사용 권유 푸시 알림 구현 ✅
+
+**구현 목적**: 사용자에게 매일 정해진 시간에 앱 사용을 권유하여 꾸준한 활동 추적 습관 형성
+
+#### 1. 구현된 기능
+
+##### A. 일일 리마인더 핵심 기능
+- **알림 시간**: 매일 오전 9시 (디바이스 로컬 시간 기준)
+- **알림 메시지**: 
+  - 제목: "🌟 Time to Focus!"
+  - 내용: "Start your day with a focused session. What will you work on today?"
+- **중복 방지**: 이미 스케줄된 경우 재설정하지 않음
+- **권한 의존적**: 알림 권한이 있어야만 작동
+
+##### B. 자동 스케줄링 시점
+1. **앱 초기화 시** (App.tsx:42-59)
+   - 앱 시작 시 권한 확인 후 자동 설정
+   - 이미 스케줄되어 있으면 중복 설정하지 않음
+
+2. **권한 승인 시** (TimerPage.tsx:150-162)
+   - 첫 타이머 사용 시 권한 요청
+   - 권한이 승인되면 일일 리마인더 자동 설정
+
+#### 2. 수정/추가된 파일
+
+##### A. NotificationService.ts (282-383줄)
+```typescript
+// 새로 추가된 메서드들
+async scheduleDailyReminder(): Promise<string | null>     // 일일 리마인더 스케줄링
+async cancelDailyReminder(): Promise<boolean>             // 일일 리마인더 취소
+async isDailyReminderScheduled(): Promise<boolean>        // 스케줄 상태 확인
+```
+
+**주요 특징**:
+- CalendarTrigger 사용: `{ hour: 9, minute: 0, repeats: true }`
+- 기존 daily_reminder 타입 알림 자동 취소 후 재설정
+- 에러 처리 및 로깅 포함
+
+##### B. useNotifications.ts (14-16, 140-169, 204-206줄)
+```typescript
+// Hook에 추가된 함수들
+scheduleDailyReminder: () => Promise<string | null>       // 일일 리마인더 스케줄링
+cancelDailyReminder: () => Promise<boolean>               // 일일 리마인더 취소  
+isDailyReminderScheduled: () => Promise<boolean>          // 스케줄 상태 확인
+```
+
+**특징**:
+- 권한 체크 후 처리
+- 일일 리마인더는 중요도가 낮아 권한 거부 시 alert 표시하지 않음
+
+##### C. App.tsx (42-59줄)
+```typescript
+// 앱 초기화 시 일일 리마인더 자동 설정
+if (hasPermission) {
+  const isScheduled = await NotificationService.isDailyReminderScheduled()
+  if (!isScheduled) {
+    const reminderId = await NotificationService.scheduleDailyReminder()
+    if (reminderId) {
+      console.log('Daily reminder scheduled at 9:00 AM:', reminderId)
+    }
+  }
+}
+```
+
+##### D. TimerPage.tsx (47-48, 150-162줄)
+```typescript
+// 권한 승인 시 일일 리마인더 자동 설정
+if (granted) {
+  const isScheduled = await isDailyReminderScheduled()
+  if (!isScheduled) {
+    const reminderId = await scheduleDailyReminder()
+    if (reminderId) {
+      console.log('Daily reminder auto-scheduled after permission grant:', reminderId)
+    }
+  }
+}
+```
+
+#### 3. 코드 특징
+
+##### 검색 용이성
+- **한글/영어 주석 병행**: 나중에 검색이 쉽도록 양쪽 언어로 주석 작성
+- **명확한 함수명**: scheduleDailyReminder, cancelDailyReminder 등 직관적 네이밍
+- **콘솔 로그**: 디버깅을 위한 명확한 로그 메시지
+
+##### 안정성
+- **중복 방지 로직**: 이미 스케줄된 알림 체크
+- **에러 처리**: try-catch로 모든 비동기 작업 보호
+- **권한 체크**: 알림 권한 없으면 graceful하게 처리
+
+#### 4. 테스트 방법
+
+1. **앱 실행** → 알림 권한 허용
+2. **Console 확인**: "Daily reminder scheduled at 9:00 AM" 메시지
+3. **iOS 설정 확인**: Settings > Zen Tracker > Notifications
+4. **실제 테스트**: 다음날 오전 9시에 알림 수신 확인
+
+**주의사항**:
+- iOS 시뮬레이터에서는 알림 테스트 불가
+- 실제 기기에서만 정상 작동
+- 알림은 디바이스의 로컬 시간 기준
+
+#### 5. 알림 타입 전체 현황
+
+현재 구현된 알림 타입:
+1. **일일 리마인더** (매일 오전 9시) - NEW ✨
+2. **목표 달성 알림** - 설정한 목표 시간 도달 시
+3. **체크인 알림** - 30분마다 "아직 집중 중?"
+4. **시간당 알림** - 무한 모드에서 1시간마다
+5. **2배 목표 달성 알림** - 목표의 2배 시간 도달 시
+6. **세션 완료 알림** - 타이머 종료 시 (현재 비활성화)
+
+#### 6. 향후 개선 사항
+
+- 사용자가 알림 시간을 커스터마이징할 수 있는 설정 화면
+- 일일 리마인더 on/off 토글 기능
+- 주말 제외 옵션
+- 다양한 메시지 로테이션
