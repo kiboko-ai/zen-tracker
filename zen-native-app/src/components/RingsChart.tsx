@@ -136,7 +136,7 @@ export const RingsChart: React.FC<RingsChartProps> = ({ activities, sessions, da
       activityGroups[session.activity].push(session);
     });
 
-    const rings = [];
+    const rings: React.ReactElement[] = [];
     const activities_list = Object.keys(activityGroups);
     const ringWidth = 20; // 링 너비 더 증가
     const startRadius = 80; // 시작 반지름 더 증가 (도넛 원 크게)

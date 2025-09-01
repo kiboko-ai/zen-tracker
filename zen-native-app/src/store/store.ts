@@ -43,6 +43,14 @@ interface AppState {
   
   setFirstTime: (value: boolean) => void
   setSelectedActivities: (activities: string[]) => void
+  
+  // Import methods
+  importData: (data: {
+    activities: Activity[]
+    sessions: Session[]
+    isFirstTime?: boolean
+    selectedActivities?: string[]
+  }, mode: 'replace' | 'merge' | 'append') => void
 }
 
 export const useStore = create<AppState>()(
@@ -151,6 +159,66 @@ export const useStore = create<AppState>()(
       
       setFirstTime: (value) => set({ isFirstTime: value }),
       setSelectedActivities: (activities) => set({ selectedActivities: activities }),
+      
+      importData: (data, mode) => {
+        const currentState = get()
+        
+        switch (mode) {
+          case 'replace':
+            // Replace all data
+            set({
+              activities: data.activities,
+              sessions: data.sessions,
+              isFirstTime: data.isFirstTime ?? false,
+              selectedActivities: data.selectedActivities ?? [],
+              currentSession: null
+            })
+            break
+            
+          case 'merge':
+            // Merge with existing data, avoiding duplicates
+            const existingActivityIds = new Set(currentState.activities.map(a => a.id))
+            const existingSessionIds = new Set(currentState.sessions.map(s => s.id))
+            
+            const newActivities = data.activities.filter(a => !existingActivityIds.has(a.id))
+            const newSessions = data.sessions.filter(s => !existingSessionIds.has(s.id))
+            
+            set({
+              activities: [...currentState.activities, ...newActivities],
+              sessions: [...currentState.sessions, ...newSessions],
+              isFirstTime: false,
+              selectedActivities: [...new Set([...currentState.selectedActivities, ...(data.selectedActivities ?? [])])]
+            })
+            break
+            
+          case 'append':
+            // Add all as new entries with new IDs
+            const timestamp = Date.now()
+            const appendedActivities = data.activities.map((a, index) => ({
+              ...a,
+              id: `${a.id}-imported-${timestamp}-${index}`
+            }))
+            
+            // Create ID mapping for sessions
+            const activityIdMap = new Map<string, string>()
+            data.activities.forEach((a, i) => {
+              activityIdMap.set(a.id, appendedActivities[i].id)
+            })
+            
+            const appendedSessions = data.sessions.map((s, index) => ({
+              ...s,
+              id: `${s.id}-imported-${timestamp}-${index}`,
+              activityId: activityIdMap.get(s.activityId) || s.activityId
+            }))
+            
+            set({
+              activities: [...currentState.activities, ...appendedActivities],
+              sessions: [...currentState.sessions, ...appendedSessions],
+              isFirstTime: false
+            })
+            break
+        }
+      },
     }),
     {
       name: 'zen-storage',
