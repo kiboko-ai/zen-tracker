@@ -839,7 +839,7 @@ graph TD
 ##### A. 일일 리마인더 핵심 기능
 - **알림 시간**: 매일 오전 9시 (디바이스 로컬 시간 기준)
 - **알림 메시지**: 
-  - 제목: "🌟 Time to Focus!"
+  - 제목: " ◉ Time to Focus"
   - 내용: "Start your day with a focused session. What will you work on today?"
 - **중복 방지**: 이미 스케줄된 경우 재설정하지 않음
 - **권한 의존적**: 알림 권한이 있어야만 작동

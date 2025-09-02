@@ -310,7 +310,7 @@ class NotificationService {
       // Schedule notification for 9:00 AM daily
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
-          title: '🌟 Time to Focus!',
+          title: '◉ Time to Focus',
           body: 'Start your day with a focused session. What will you work on today?',
           sound: true,
           badge: 1,
