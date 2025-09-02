@@ -214,7 +214,7 @@ graph LR
 
 ---
 
-## 2024-08-28 작업 내용
+## 2025-08-28 작업 내용
 
 ### 1. iOS 버전 업데이트 (13.4 → 16.6) ✅
 
@@ -540,7 +540,7 @@ class LiveActivityService {
 
 ---
 
-## 📱 알림 시스템 구현 (2024.11.28 추가)
+## 📱 알림 시스템 구현 (2025.08.28 추가)
 
 ### 개요
 iOS 16+ 타겟으로 로컬 푸시 알림 시스템을 구현했습니다. 권한이 있을 때만 알림이 작동하며, 권한 거부 시 영어 메시지를 표시합니다.
@@ -828,7 +828,7 @@ graph TD
 
 ---
 
-## 2024-11-29 작업 내용
+## 2025-08-29 작업 내용
 
 ### 매일 오전 9시 앱 사용 권유 푸시 알림 구현 ✅
 
@@ -948,3 +948,150 @@ if (granted) {
 - 일일 리마인더 on/off 토글 기능
 - 주말 제외 옵션
 - 다양한 메시지 로테이션
+
+---
+
+## 2025-09-01 작업 내용
+
+### 1. 데이터 Export/Import 기능 구현 ✅
+
+#### A. Export 기능
+**구현 내용**:
+- Report 페이지 우측 상단에 Export 버튼(💾) 추가
+- JSON/CSV 두 가지 형식 지원
+- iOS/Android Share Sheet를 통한 파일 공유
+- 파일명 자동 생성 규칙:
+  - 단일 월: `zen_202501.json`
+  - 여러 월: `zen_2025_01-03.json` 
+  - 여러 연도: `zen_202412-202503.json`
+
+**기술 구현**:
+- `react-native-fs`를 사용한 임시 파일 생성
+- Share API를 통한 파일 공유 (권한 불필요)
+- Base64 인코딩 대신 파일 URL 방식 사용 (안정성 향상)
+
+#### B. Import 기능
+**구현 내용**:
+- Report 페이지 우측 상단에 Import 버튼(📂) 추가
+- `expo-document-picker`를 통한 파일 선택
+- 3가지 Import 모드:
+  - Replace All: 전체 데이터 교체
+  - Merge: 중복 제거하며 병합
+  - Append: 새 ID로 추가
+
+**Store 개선**:
+- `importData` 메서드 추가 (src/store/store.ts)
+- 실제 데이터 저장 및 상태 업데이트 구현
+
+**생성/수정된 파일**:
+- `src/services/dataTransfer/ExportService.ts`: Export 로직
+- `src/services/dataTransfer/ImportService.ts`: Import 로직 및 검증
+- `src/utils/base64.ts`: Base64 인코딩 유틸리티
+- `src/screens/ReportPage.tsx`: UI 통합
+
+### 2. iOS Share Sheet 에러 해결 ✅
+
+**문제**:
+- data URL 방식으로 큰 데이터 전송 시 시스템 에러 발생
+- "View Service terminated" 및 "Client not entitled" 에러
+
+**해결**:
+- `react-native-fs` 설치 및 파일 시스템 사용
+- 임시 디렉토리에 파일 생성 후 file:// URL로 공유
+- 공유 완료 후 자동 정리 로직 추가
+
+### 3. Push Notification 즉시 울리는 문제 수정 ✅
+
+**문제 원인**:
+- `scheduleGoalAchievementNotification`에서 `delaySeconds` 파라미터 미전달
+- `trigger: null`이 되어 즉시 알림 발송
+
+**해결**:
+- TimerPage.tsx: `scheduleGoalNotification` 호출 시 `targetSeconds` 전달
+- useNotifications.ts: 인터페이스에 `delaySeconds` 파라미터 추가
+- 이제 실제 목표 시간 도달 시에만 알림 발송
+
+### 4. UI/UX 개선 ✅
+
+#### Export/Import 버튼 개선
+- 이모지 아래 작은 텍스트 라벨 추가
+- Import: 📂 + "import" (빨간색, 9px)
+- Export: 💾 + "export" (빨간색, 9px)
+- 시각적 명확성 향상
+
+### 5. TypeScript 에러 수정 ✅
+
+**수정 내용**:
+- RingsChart: `rings` 배열 타입 명시
+- useNotifications: 누락된 메서드 인터페이스 추가
+- DocumentPicker: 최신 API 대응
+- Navigation 타입 캐스팅
+- Share API 타입 처리
+
+### 6. 패키지 설치 및 의존성 관리 ✅
+
+**설치된 패키지**:
+```json
+{
+  "expo-document-picker": "^13.1.6",
+  "react-native-fs": "^2.20.0"
+}
+```
+
+**iOS 의존성**:
+- `pod install` 실행으로 iOS 의존성 동기화
+- ExpoDocumentPicker, RNFS 포드 추가
+
+### 7. 데이터 구조 문서화
+
+**Export 데이터 형식**:
+```json
+{
+  "version": "1.0.0",
+  "exportDate": "2025-09-01T10:30:00.000Z",
+  "deviceInfo": {
+    "platform": "iOS",
+    "appVersion": "1.0.4"
+  },
+  "data": {
+    "activities": [...],
+    "sessions": [...],
+    "currentSession": null,
+    "isFirstTime": false,
+    "selectedActivities": [...]
+  },
+  "statistics": {
+    "totalActivities": 3,
+    "totalSessions": 10,
+    "totalFocusTime": 3600000,
+    "averageSessionDuration": 360000,
+    "mostUsedActivity": "Study",
+    "lastActivityDate": "2025-09-01T09:00:00.000Z"
+  }
+}
+```
+
+### 8. 주요 문제 해결 기록
+
+#### A. Import 기능이 실제로 저장되지 않던 문제
+- **원인**: ImportService가 데이터만 반환하고 실제 Store 업데이트 누락
+- **해결**: Store에 `importData` 메서드 추가 및 연결
+
+#### B. 파일명 생성 로직 개선
+- **변경 전**: `zen-tracker-backup-timestamp.json`
+- **변경 후**: 데이터 기간을 반영한 의미있는 파일명
+
+### 9. 테스트 완료 항목
+
+- ✅ JSON Export/Import 정상 작동
+- ✅ CSV Export 정상 작동
+- ✅ 파일명 자동 생성 확인
+- ✅ iOS Share Sheet 안정성 확인
+- ✅ 3가지 Import 모드 작동 확인
+- ✅ Push Notification 타이밍 정상 작동
+- ✅ TypeScript 에러 없음 확인
+
+### 10. 현재 브랜치 상태
+- **브랜치명**: feature/data-export-import-250901
+- **베이스 브랜치**: feature/live-activity-250827
+- **주요 기능**: 데이터 백업/복원 기능 완성

@@ -8,9 +8,11 @@ interface UseNotificationsReturn {
   isLoading: boolean;
   requestPermission: () => Promise<boolean>;
   showPermissionDeniedAlert: () => void;
-  scheduleGoalNotification: (activityName: string, targetMinutes: number) => Promise<string | null>;
+  scheduleGoalNotification: (activityName: string, targetMinutes: number, delaySeconds?: number) => Promise<string | null>;
   scheduleCheckInReminder: (activityName: string, intervalMinutes?: number) => Promise<string | null>;
   scheduleCompletionNotification: (activityName: string, totalMinutes: number) => Promise<string | null>;
+  scheduleHourlyNotification: (activityName: string) => Promise<string | null>;
+  scheduleDoubleTargetNotification: (activityName: string, targetMinutes: number) => Promise<string | null>;
   scheduleDailyReminder: () => Promise<string | null>;
   cancelDailyReminder: () => Promise<boolean>;
   isDailyReminderScheduled: () => Promise<boolean>;

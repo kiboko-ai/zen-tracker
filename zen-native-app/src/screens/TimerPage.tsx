@@ -180,7 +180,7 @@ export default function TimerPage() {
         // Has target time: schedule goal and 2x notifications
         const targetMinutes = Math.floor(targetSeconds / 60)
         
-        // Schedule goal achievement notification
+        // Schedule goal achievement notification (after target seconds)
         const goalId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
         setGoalNotificationId(goalId)
         
