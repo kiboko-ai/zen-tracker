@@ -180,6 +180,72 @@ class NotificationService {
   }
 
   /**
+   * Schedule smart check-in reminders that avoid conflicts with goal/2x notifications
+   * 충돌을 회피하는 스마트 체크인 알림 스케줄링
+   * @param activityName Name of the activity
+   * @param targetSeconds Target time in seconds
+   * @returns Array of notification IDs
+   */
+  async scheduleSmartCheckInReminders(
+    activityName: string,
+    targetSeconds: number
+  ): Promise<string[]> {
+    if (!this.hasPermission) {
+      console.log('No notification permission for smart check-in');
+      return [];
+    }
+
+    const notificationIds: string[] = [];
+    const doubleTargetSeconds = targetSeconds * 2;
+    
+    // Calculate conflict times (times when goal or 2x notifications will fire)
+    // 충돌 시점 계산 (목표 달성 또는 2x 알림이 발생할 시점)
+    const conflictTimes = new Set<number>();
+    conflictTimes.add(targetSeconds); // Always skip goal achievement time
+    conflictTimes.add(doubleTargetSeconds); // Always skip 2x goal time
+    
+    // Schedule check-ins at 30-minute intervals, skipping conflict times
+    // 30분 간격으로 체크인 알림 스케줄, 충돌 시점은 스킵
+    const maxDuration = Math.max(doubleTargetSeconds + 3600, 7200); // Continue for at least 2 hours
+    
+    for (let checkInTime = 1800; checkInTime <= maxDuration; checkInTime += 1800) {
+      // Skip if this time conflicts with goal or 2x notifications
+      if (conflictTimes.has(checkInTime)) {
+        console.log(`Skipping check-in at ${checkInTime}s to avoid conflict with goal/2x notification`);
+        continue;
+      }
+      
+      // Schedule individual check-in notification
+      try {
+        const notificationId = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'Zen Tracker',
+            body: `You've been working on ${activityName} for ${Math.floor(checkInTime / 60)} minutes.`,
+            sound: true,
+            data: { 
+              type: 'session_check_in',
+              activityName,
+              checkInMinutes: Math.floor(checkInTime / 60),
+              scheduledAt: checkInTime
+            },
+          },
+          trigger: {
+            seconds: checkInTime,
+          },
+        });
+        
+        notificationIds.push(notificationId);
+        console.log(`Scheduled check-in at ${checkInTime}s (${Math.floor(checkInTime / 60)}min)`);
+      } catch (error) {
+        console.error(`Failed to schedule check-in at ${checkInTime}s:`, error);
+      }
+    }
+    
+    console.log(`Scheduled ${notificationIds.length} smart check-in reminders for ${activityName}`);
+    return notificationIds;
+  }
+
+  /**
    * Schedule hourly notifications for infinity mode (no target time)
    * @param activityName Name of the activity
    * @returns Notification ID or null if no permission

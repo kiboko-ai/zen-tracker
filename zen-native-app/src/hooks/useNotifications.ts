@@ -10,6 +10,7 @@ interface UseNotificationsReturn {
   showPermissionDeniedAlert: () => void;
   scheduleGoalNotification: (activityName: string, targetMinutes: number, delaySeconds?: number) => Promise<string | null>;
   scheduleCheckInReminder: (activityName: string, intervalMinutes?: number) => Promise<string | null>;
+  scheduleSmartCheckInReminders: (activityName: string, targetSeconds: number) => Promise<string[]>;
   scheduleCompletionNotification: (activityName: string, totalMinutes: number) => Promise<string | null>;
   scheduleHourlyNotification: (activityName: string) => Promise<string | null>;
   scheduleDoubleTargetNotification: (activityName: string, targetMinutes: number) => Promise<string | null>;
@@ -90,6 +91,20 @@ export const useNotifications = (): UseNotificationsReturn => {
       return await NotificationService.scheduleSessionCheckInReminder(
         activityName,
         intervalMinutes
+      );
+    },
+    [hasPermission]
+  );
+
+  const scheduleSmartCheckInReminders = useCallback(
+    async (activityName: string, targetSeconds: number): Promise<string[]> => {
+      if (!hasPermission) {
+        console.log('No permission for smart check-in reminders');
+        return [];
+      }
+      return await NotificationService.scheduleSmartCheckInReminders(
+        activityName,
+        targetSeconds
       );
     },
     [hasPermission]
@@ -200,6 +215,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     showPermissionDeniedAlert,
     scheduleGoalNotification,
     scheduleCheckInReminder,
+    scheduleSmartCheckInReminders,  // 스마트 체크인 리마인더 추가
     scheduleCompletionNotification,
     scheduleHourlyNotification,
     scheduleDoubleTargetNotification,

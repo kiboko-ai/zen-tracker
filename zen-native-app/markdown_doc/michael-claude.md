@@ -951,6 +951,104 @@ if (granted) {
 
 ---
 
+## 2025-09-02 작업 내용
+
+### 중복 Push Notification 방지 로직 구현 ✅
+
+**문제 상황**:
+- 목표 시간이 30분의 배수일 때 (30분, 60분, 90분 등) 목표 달성 알림과 30분 체크인 알림이 동시에 발생
+- 목표 시간의 2배가 30분의 배수일 때도 유사한 중복 발생 가능
+
+**해결 방법**:
+스마트 체크인 리마인더 시스템 구현 - 충돌 시점을 자동으로 감지하고 회피
+
+#### 1. 구현된 기능
+
+##### A. NotificationService에 새 메서드 추가
+```typescript
+// src/services/notifications/NotificationService.ts (183-246줄)
+async scheduleSmartCheckInReminders(
+  activityName: string,
+  targetSeconds: number
+): Promise<string[]>
+```
+
+**특징**:
+- 목표 달성 시점과 2x 목표 시점을 자동으로 회피
+- 30분 간격으로 체크인 알림 스케줄링
+- 충돌 시점은 콘솔에 로그 출력
+- 개별 알림 ID 배열 반환 (취소 시 사용)
+
+##### B. 충돌 감지 로직
+```typescript
+const conflictTimes = new Set<number>();
+conflictTimes.add(targetSeconds);        // 목표 달성 시점
+conflictTimes.add(targetSeconds * 2);     // 2x 목표 시점
+
+// 30분 간격 체크인 시 충돌 확인
+for (let checkInTime = 1800; checkInTime <= maxDuration; checkInTime += 1800) {
+  if (conflictTimes.has(checkInTime)) {
+    continue; // 충돌 시점 스킵
+  }
+  // 알림 스케줄링
+}
+```
+
+#### 2. 수정된 파일
+
+##### A. NotificationService.ts
+- `scheduleSmartCheckInReminders` 메서드 추가 (183-246줄)
+- 충돌 회피 로직 구현
+- 개별 알림 스케줄링으로 정확한 시점 제어
+
+##### B. useNotifications.ts
+- 인터페이스에 `scheduleSmartCheckInReminders` 추가 (13줄)
+- Hook 구현체 추가 (99-111줄)
+- return 객체에 메서드 추가 (218줄)
+
+##### C. TimerPage.tsx
+- `checkInNotificationIds` 상태 배열 추가 (64줄)
+- 기존 단일 체크인을 스마트 체크인으로 교체 (193-199줄)
+- 타이머 종료 시 모든 체크인 알림 취소 로직 추가 (237-244줄)
+
+#### 3. 중복 방지 예시
+
+##### 케이스 1: 목표 30분
+- **이전**: 30분에 목표 달성 + 30분 체크인 (2개 알림)
+- **현재**: 30분에 목표 달성만, 60분부터 체크인 시작
+
+##### 케이스 2: 목표 15분
+- **이전**: 30분에 2x 목표 + 30분 체크인 (2개 알림)  
+- **현재**: 30분에 2x 목표만, 60분부터 체크인 시작
+
+##### 케이스 3: 목표 45분
+- **이전**: 90분에 2x 목표 + 90분 체크인 (2개 알림)
+- **현재**: 30분, 60분 체크인 후, 90분에 2x 목표만
+
+#### 4. 테스트 시나리오
+
+1. **목표 30분 설정** → 30분에 목표 달성만, 60분/90분/120분에 체크인
+2. **목표 15분 설정** → 15분에 목표 달성, 30분에 2x 목표, 60분/90분에 체크인
+3. **목표 45분 설정** → 30분 체크인, 45분 목표 달성, 60분 체크인, 90분 2x 목표
+4. **목표 60분 설정** → 30분 체크인, 60분 목표 달성만, 90분 체크인, 120분 2x 목표
+
+#### 5. 주요 개선 사항
+
+- **중복 알림 완전 제거**: 모든 30분 배수 충돌 케이스 처리
+- **유연한 스케줄링**: 충돌 시점만 스킵하고 나머지는 정상 진행
+- **명확한 로그**: 충돌 회피 시 콘솔에 명시적 로그 출력
+- **개별 관리**: 각 체크인 알림을 개별 ID로 관리하여 정확한 취소 가능
+
+#### 6. TypeScript 에러
+
+프로젝트에 기존 TypeScript 에러가 있으나 이번 수정과는 무관:
+- `react-native-wheely` 모듈 타입 선언 누락 (기존 문제)
+- TimerPage.tsx 383, 402줄 파라미터 타입 누락 (기존 문제)
+
+새로 추가한 코드는 TypeScript 에러 없음 확인 ✅
+
+---
+
 ## 2025-09-01 작업 내용
 
 ### 1. 데이터 Export/Import 기능 구현 ✅
