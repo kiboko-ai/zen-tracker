@@ -61,9 +61,9 @@ export default function Home() {
             <a href="https://apps.apple.com/kr/app/zen/id6749873242" target="_blank" rel="noopener noreferrer" className={styles.primaryButton}>
               Download for iOS
             </a>
-            <button className={styles.secondaryButton} disabled>
-              Google Play (Coming Soon)
-            </button>
+            <a href="https://play.google.com/store/apps/details?id=com.anonymous.zenapp&pcampaignid=web_share" target="_blank" rel="noopener noreferrer" className={styles.primaryButton}>
+              Download for Google Play
+            </a>
           </div>
           <div className={styles.screenshotCarousel}>
             <div className={styles.screenshotContainer}>
@@ -170,13 +170,13 @@ export default function Home() {
           <p className={styles.downloadDescription}>
             Join thousands of users who have transformed their daily routines with Zen
           </p>
-          <div className={styles.downloadButtons}>
-            <a href="https://apps.apple.com/kr/app/zen/id6749873242" target="_blank" rel="noopener noreferrer" className={styles.appStoreButton}>
-              Download on App Store
+          <div className={styles.ctaButtons}>
+            <a href="https://apps.apple.com/kr/app/zen/id6749873242" target="_blank" rel="noopener noreferrer" className={styles.primaryButton}>
+              Download for iOS
             </a>
-            <button className={styles.playStoreButton} disabled>
-              Google Play (Coming Soon)
-            </button>
+            <a href="https://play.google.com/store/apps/details?id=com.anonymous.zenapp&pcampaignid=web_share" target="_blank" rel="noopener noreferrer" className={styles.primaryButton}>
+              Download for Google Play
+            </a>
           </div>
         </section>
       </main>
