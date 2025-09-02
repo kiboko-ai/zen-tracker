@@ -6,6 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Alert,
+  Platform,
+  Share,
+  ActionSheetIOS,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -15,6 +19,10 @@ import { useStore } from '../store/store'
 import { TimelineChart } from '../components/TimelineChart'
 import { RingsChart } from '../components/RingsChart'
 import { getActivityColor } from '../utils/activityColors'
+import { ExportService } from '../services/dataTransfer/ExportService'
+import { ImportService } from '../services/dataTransfer/ImportService'
+import * as DocumentPicker from 'expo-document-picker'
+import RNFS from 'react-native-fs'
 
 type TabType = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
@@ -22,10 +30,13 @@ const { width } = Dimensions.get('window')
 
 export default function ReportPage() {
   const navigation = useNavigation()
-  const { sessions, activities } = useStore()
+  const store = useStore()
+  const { sessions, activities, currentSession, isFirstTime, selectedActivities } = store
   const [activeTab, setActiveTab] = useState<TabType>('daily')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [chartView, setChartView] = useState<'timeline' | 'rings'>('timeline')
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
   
   const now = selectedDate
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
@@ -90,6 +101,202 @@ export default function ReportPage() {
       return `${hours.toFixed(1)} hour`
     }
     return `${minutes} min`
+  }
+
+  const handleExport = async () => {
+    if (isExporting) return
+    
+    const showExportOptions = () => {
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: ['Cancel', 'Export as JSON', 'Export as CSV'],
+            cancelButtonIndex: 0,
+            title: 'Choose Export Format',
+          },
+          async (buttonIndex) => {
+            if (buttonIndex === 1) {
+              await exportData('json')
+            } else if (buttonIndex === 2) {
+              await exportData('csv')
+            }
+          }
+        )
+      } else {
+        Alert.alert(
+          'Choose Export Format',
+          '',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Export as JSON', onPress: () => exportData('json') },
+            { text: 'Export as CSV', onPress: () => exportData('csv') },
+          ],
+          { cancelable: true }
+        )
+      }
+    }
+
+    const exportData = async (format: 'json' | 'csv') => {
+      try {
+        setIsExporting(true)
+        
+        let content: string
+        let fileName: string
+        
+        if (format === 'json') {
+          const exportData = ExportService.prepareExportData(
+            activities,
+            sessions,
+            currentSession,
+            isFirstTime,
+            selectedActivities
+          )
+          exportData.deviceInfo.platform = Platform.OS
+          content = ExportService.exportToJSON(exportData)
+          fileName = ExportService.generateFileName('json', sessions)
+        } else {
+          content = ExportService.exportToCSV(activities, sessions)
+          fileName = ExportService.generateFileName('csv', sessions)
+        }
+        
+        // Write file to temporary directory
+        const tempPath = `${RNFS.TemporaryDirectoryPath}/${fileName}`
+        await RNFS.writeFile(tempPath, content, 'utf8')
+        
+        // Share the file
+        const result = await Share.share({
+          url: Platform.OS === 'ios' ? `file://${tempPath}` : tempPath,
+          title: `Export Zen Tracker Data`,
+        }, {
+          subject: fileName,
+          dialogTitle: 'Export Zen Tracker Data',
+        })
+        
+        if (result.action === Share.sharedAction) {
+          console.log('Data exported successfully')
+          // Clean up temp file after a delay
+          setTimeout(() => {
+            RNFS.unlink(tempPath).catch(() => {})
+          }, 5000)
+        } else {
+          // Clean up immediately if cancelled
+          RNFS.unlink(tempPath).catch(() => {})
+        }
+      } catch (error) {
+        console.error('Export failed:', error)
+        Alert.alert('Export Failed', 'Unable to export data. Please try again.')
+      } finally {
+        setIsExporting(false)
+      }
+    }
+    
+    showExportOptions()
+  }
+
+  const handleImport = async () => {
+    if (isImporting) return
+    
+    try {
+      setIsImporting(true)
+      
+      // Open document picker
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/json', 'text/csv', 'text/comma-separated-values'],
+        copyToCacheDirectory: true,
+      })
+      
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const file = result.assets[0]
+        // Read file content
+        const response = await fetch(file.uri)
+        const content = await response.text()
+        
+        // Determine file type
+        const isCSV = file.name?.toLowerCase().endsWith('.csv') || false
+        
+        if (isCSV) {
+          // Handle CSV import
+          const parsed = ImportService.parseCSV(content)
+          if (parsed) {
+            Alert.alert(
+              'Import CSV Data',
+              `Found ${parsed.activities.length} activities. How would you like to import?`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Add to Existing',
+                  onPress: () => {
+                    // Add imported activities
+                    parsed.activities.forEach(activity => {
+                      store.addActivity(activity.name)
+                      const newActivity = activities[0] // Get the newly added activity
+                      if (newActivity) {
+                        store.updateActivity(newActivity.id, { totalTime: activity.totalTime })
+                      }
+                    })
+                    Alert.alert('Success', `Imported ${parsed.activities.length} activities`)
+                  }
+                },
+              ]
+            )
+          } else {
+            Alert.alert('Import Failed', 'Invalid CSV format')
+          }
+        } else {
+          // Handle JSON import
+          const showImportModeOptions = () => {
+            Alert.alert(
+              'Import Data',
+              'How would you like to import the data?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Replace All',
+                  style: 'destructive',
+                  onPress: () => confirmImport('replace'),
+                },
+                {
+                  text: 'Merge',
+                  onPress: () => confirmImport('merge'),
+                },
+                {
+                  text: 'Add as New',
+                  onPress: () => confirmImport('append'),
+                },
+              ]
+            )
+          }
+          
+          const confirmImport = async (mode: 'replace' | 'merge' | 'append') => {
+            const result = await ImportService.importData(
+              content,
+              activities,
+              sessions,
+              { mode }
+            )
+            
+            if (result.success && result.data) {
+              // Actually update the store with imported data
+              store.importData(result.data, mode)
+              
+              Alert.alert(
+                'Import Successful',
+                `Imported ${result.activitiesImported} activities and ${result.sessionsImported} sessions`
+              )
+            } else {
+              Alert.alert('Import Failed', result.error || 'Unknown error occurred')
+            }
+          }
+          
+          showImportModeOptions()
+        }
+      }
+    } catch (error) {
+      console.error('Import failed:', error)
+      Alert.alert('Import Failed', 'Unable to import data. Please try again.')
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   const getDateLabel = () => {
@@ -256,13 +463,34 @@ export default function ReportPage() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => (navigation as any).navigate('Home')}
           style={styles.backButton}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Report</Text>
-        <View style={styles.placeholder} />
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            onPress={handleImport}
+            style={styles.headerButton}
+            disabled={isImporting}
+          >
+            <View style={styles.buttonContent}>
+              <Text style={[styles.headerButtonText, isImporting && styles.headerButtonDisabled]}>📂</Text>
+              <Text style={[styles.buttonLabel, isImporting && styles.headerButtonDisabled]}>import</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleExport}
+            style={styles.headerButton}
+            disabled={isExporting}
+          >
+            <View style={styles.buttonContent}>
+              <Text style={[styles.headerButtonText, isExporting && styles.headerButtonDisabled]}>💾</Text>
+              <Text style={[styles.buttonLabel, isExporting && styles.headerButtonDisabled]}>export</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.tabContainer}>
@@ -521,7 +749,7 @@ export default function ReportPage() {
             <Text style={styles.emptyText}>No activities recorded</Text>
             {isToday && (
               <TouchableOpacity
-                onPress={() => navigation.navigate('Home')}
+                onPress={() => (navigation as any).navigate('Home')}
                 style={styles.startTrackingButton}
               >
                 <Text style={styles.startTrackingText}>Start Tracking</Text>
@@ -562,6 +790,30 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     flex: 1,
+  },
+  headerButtons: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+  },
+  headerButton: {
+    paddingHorizontal: 8,
+  },
+  buttonContent: {
+    alignItems: 'center',
+  },
+  headerButtonText: {
+    fontSize: 20,
+    color: '#000',
+  },
+  buttonLabel: {
+    fontSize: 9,
+    color: '#FF0000',
+    marginTop: -2,
+  },
+  headerButtonDisabled: {
+    color: '#9CA3AF',
   },
   tabContainer: {
     flexDirection: 'row',
