@@ -7,12 +7,14 @@
       public struct ContentState: Codable, Hashable {
           public var elapsedSeconds: Int
           public var isPaused: Bool
-          public var pausedAt: Date?
+          public var lastUpdateTime: Date
+          public var pausedDuration: TimeInterval  // 누적된 일시정지 시간
 
-          public init(elapsedSeconds: Int = 0, isPaused: Bool = false, pausedAt: Date? = nil) {
+          public init(elapsedSeconds: Int = 0, isPaused: Bool = false, lastUpdateTime: Date = Date(), pausedDuration: TimeInterval = 0) {
               self.elapsedSeconds = elapsedSeconds
               self.isPaused = isPaused
-              self.pausedAt = pausedAt
+              self.lastUpdateTime = lastUpdateTime
+              self.pausedDuration = pausedDuration
           }
       }
 
@@ -78,15 +80,26 @@
                   Spacer()
               }
               
-              // 🔴 핵심: elapsedSeconds부터 시작하는 타이머
-              // 매초 업데이트되는 elapsedSeconds를 기준으로 타이머 표시
-              let adjustedStartTime = Date().addingTimeInterval(-Double(context.state.elapsedSeconds))
-              let endDate = adjustedStartTime.addingTimeInterval(28800) // 8시간
-              Text(timerInterval: adjustedStartTime...endDate, countsDown: false)
-                  .font(.largeTitle)
-                  .fontWeight(.bold)
-                  .monospacedDigit()
-                  .foregroundColor(.white)
+              // 타이머 표시 - pausedDuration을 활용한 정확한 계산
+              Group {
+                  if context.state.isPaused {
+                      // 일시정지: 현재 값 고정 표시
+                      Text(formatTime(seconds: context.state.elapsedSeconds))
+                          .font(.largeTitle)
+                          .fontWeight(.bold)
+                          .monospacedDigit()
+                          .foregroundColor(.gray)
+                  } else {
+                      // 실행 중: 시작 시간과 pausedDuration을 사용한 자동 업데이트
+                      // startTime + pausedDuration을 더해서 실제 타이머 시작점 계산
+                      let adjustedStart = context.attributes.startTime.addingTimeInterval(context.state.pausedDuration)
+                      Text(timerInterval: adjustedStart...adjustedStart.addingTimeInterval(28800), countsDown: false)
+                          .font(.largeTitle)
+                          .fontWeight(.bold)
+                          .monospacedDigit()
+                          .foregroundColor(.white)
+                  }
+              }
               
               // Progress Bar
               if context.attributes.targetSeconds > 0 {

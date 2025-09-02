@@ -1404,3 +1404,67 @@ DynamicIsland {
 - 커스텀 알림음 추가
 - Apple Watch 연동
 - 여러 활동 동시 추적 지원
+
+---
+
+## 2025-09-02 작업 내용 추가 (Live Activity 일시정지 문제)
+
+### Live Activity 일시정지 기능 구현 시도
+
+**목표**: TimerPage.tsx에서 일시정지 버튼을 누르면 잠금화면의 Live Activity 타이머도 일시정지되도록 구현
+
+#### 문제 상황
+앱에서 일시정지 버튼을 눌러도 잠금화면의 Live Activity가 계속 실행되는 문제가 지속됨.
+
+#### 시도한 해결 방법들
+
+##### 1. isPaused 상태 전달 방식
+- LiveActivityService.ts의 updateActivity 메서드에 isPaused 파라미터 추가
+- LiveActivityModule.swift에 updateActivityWithPause 메서드 구현
+- ZenActivityAttributes.ContentState에 isPaused 필드 추가
+- **결과**: 파라미터는 전달되나 Widget UI가 반응하지 않음
+
+##### 2. Widget UI 조건부 렌더링
+```swift
+Group {
+    if context.state.isPaused {
+        // 일시정지: 고정된 시간 표시
+        Text(formatTime(seconds: context.state.elapsedSeconds))
+            .foregroundColor(.gray)
+    } else {
+        // 실행 중: 자동 업데이트 타이머
+        Text(timerInterval: ...)
+            .foregroundColor(.white)
+    }
+}
+```
+- **문제**: `Text(timerInterval:)` 사용 시 일시정지 불가, formatTime 사용 시 자동 업데이트 불가
+
+##### 3. pausedDuration 방식 (Fiti-Run 참고)
+- 일시정지 시간을 누적하여 startTime 조정
+- pausedDuration을 ContentState에 추가
+- Widget에서 adjustedStart 계산: `startTime + pausedDuration`
+- **결과**: 복잡도만 증가하고 여전히 작동하지 않음
+
+##### 4. 별도 pauseActivity/resumeActivity 메서드
+- 전용 pause/resume 메서드 생성
+- Objective-C 브릿지 시그니처 매칭
+- **문제**: NSRangeException, undefined is not a function 에러 반복
+
+#### 근본적인 문제점
+1. **iOS 제약사항**: `Text(timerInterval:)`은 자동 업데이트는 되지만 일시정지 제어가 어려움
+2. **상태 동기화**: React Native → Native Module → Widget Extension 간 상태 전달 복잡
+3. **ActivityKit 한계**: Live Activity는 실시간 업데이트보다는 정적 정보 표시에 최적화됨
+
+#### 현재 상태
+- Live Activity 기본 기능(시작, 자동 업데이트, 종료)은 정상 작동
+- **일시정지 기능은 미구현 상태로 남음**
+- 사용자는 앱에서 일시정지를 눌러도 잠금화면 타이머는 계속 진행됨을 인지해야 함
+
+#### 대안 고려사항
+1. 일시정지 시 Live Activity를 완전히 종료하고 재개 시 새로 시작
+2. 일시정지 상태를 텍스트로만 표시 (타이머는 계속 진행)
+3. Live Activity 대신 일반 로컬 알림 사용
+
+#### 결론
+iOS의 Live Activity는 실시간 스포츠 스코어, 배달 추적 등 지속적으로 업데이트되는 정보를 표시하는 데 최적화되어 있으며, 정밀한 타이머 제어(일시정지/재개)에는 제한사항이 있음. 현재 기술적 제약으로 인해 완벽한 일시정지 동기화는 구현하지 못함.

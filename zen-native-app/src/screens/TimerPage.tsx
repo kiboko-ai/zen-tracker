@@ -89,9 +89,10 @@ export default function TimerPage() {
           const elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
           setSeconds(elapsed)
           
-          // Update Live Activity every second (only when not paused)
-          if (liveActivityId && !isPaused) {
-            console.log('🟡 Updating Live Activity:', liveActivityId, 'with', elapsed, 'seconds')
+          // Update Live Activity periodically (every 30 seconds) for accuracy
+          // The widget uses timerInterval so it updates itself automatically
+          if (liveActivityId && !isPaused && elapsed % 30 === 0) {
+            // Periodic sync to maintain accuracy
             LiveActivityService.updateActivity(liveActivityId, elapsed, false)
           }
           
@@ -228,9 +229,14 @@ export default function TimerPage() {
     pauseStartRef.current = new Date()
     setIsPaused(true)
     
-    // SIMPLE SOLUTION: Just stop updating!
-    // The Live Activity will stay at the current time
-    console.log('⏸️ Paused - Live Activity will stop updating')
+    // IMPORTANT: Send pause state to Live Activity
+    if (liveActivityId && startTimeRef.current) {
+      const currentElapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+      console.log('⏸️ Sending pause update with elapsed:', currentElapsed)
+      // Send with isPaused = true
+      await LiveActivityService.updateActivity(liveActivityId, currentElapsed, true)
+    }
+    console.log('⏸️ Paused - Live Activity frozen at current time')
   }
 
   const handleResume = async () => {
@@ -243,8 +249,13 @@ export default function TimerPage() {
     }
     setIsPaused(false)
     
-    // SIMPLE SOLUTION: Updates will resume automatically in useEffect
-    console.log('▶️ Resumed - Live Activity will start updating again')
+    // Send immediate update when resuming
+    if (liveActivityId && startTimeRef.current) {
+      const currentElapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+      console.log('▶️ Sending resume update with elapsed:', currentElapsed)
+      await LiveActivityService.updateActivity(liveActivityId, currentElapsed, false)
+    }
+    console.log('▶️ Resumed - Live Activity updates will continue')
   }
 
   const handleStop = async () => {

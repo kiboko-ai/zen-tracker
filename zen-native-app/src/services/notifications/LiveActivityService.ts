@@ -89,29 +89,18 @@ class LiveActivityService {
     }
 
     try {
-      // Debug: Check what's available
-      console.log('🔍 LiveActivityModule exists?', !!NativeModules.LiveActivityModule);
-      console.log('🔍 Available methods:', Object.keys(NativeModules.LiveActivityModule || {}));
+      // 간단하게: updateActivityWithPause 하나로 통일
+      console.log(`🔄 Updating Live Activity - Paused: ${isPaused}, Elapsed: ${elapsedSeconds}`);
       
-      // Use specific pause/resume methods
-      if (isPaused === true) {
-        console.log('🔴 Calling pauseActivity:', activityId, elapsedSeconds);
-        
-        // Check if the method exists
-        if (NativeModules.LiveActivityModule?.pauseActivity) {
-          await NativeModules.LiveActivityModule.pauseActivity(
-            activityId,
-            elapsedSeconds
-          );
-        } else {
-          console.error('❌ pauseActivity method not found!');
-          console.log('Available methods:', Object.keys(NativeModules.LiveActivityModule || {}));
-          // Fallback: just don't update
-          return;
-        }
+      // updateActivityWithPause를 항상 사용 (isPaused 파라미터로 구분)
+      if (NativeModules.LiveActivityModule?.updateActivityWithPause) {
+        await NativeModules.LiveActivityModule.updateActivityWithPause(
+          activityId,
+          elapsedSeconds,
+          isPaused
+        );
       } else {
-        // Use the original method for normal updates
-        console.log('🟢 Calling updateActivity - RUNNING:', activityId, elapsedSeconds);
+        // Fallback: 기본 updateActivity 사용
         await NativeModules.LiveActivityModule.updateActivity(
           activityId,
           elapsedSeconds
@@ -119,7 +108,6 @@ class LiveActivityService {
       }
     } catch (error) {
       console.error('Failed to update Live Activity:', error);
-      console.error('Error stack:', error.stack);
     }
   }
 

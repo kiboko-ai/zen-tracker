@@ -43,7 +43,8 @@ class LiveActivityModule: NSObject {
           let initialState = ZenActivityAttributes.ContentState(
             elapsedSeconds: 0,
             isPaused: false,
-            pausedAt: nil
+            lastUpdateTime: Date(),
+            pausedDuration: 0
           )
           
           // Start the Live Activity
@@ -66,10 +67,7 @@ class LiveActivityModule: NSObject {
     }
   }
   
-  // MARK: - Update Live Activity (original method)
-  // Store pause state globally for the module
-  private var currentPauseState: Bool = false
-  
+  // MARK: - Update Live Activity (original method - for regular updates)
   @objc
   func updateActivity(_ activityId: String,
                      elapsedSeconds: NSNumber,
@@ -82,15 +80,20 @@ class LiveActivityModule: NSObject {
         
         // Update all activities (in case ID doesn't match exactly)
         for activity in activities {
+          // 기존 pausedDuration과 isPaused 상태 유지
+          let currentPausedDuration = activity.content.state.pausedDuration
+          let currentIsPaused = activity.content.state.isPaused
+          
           let updatedState = ZenActivityAttributes.ContentState(
             elapsedSeconds: elapsedSeconds.intValue,
-            isPaused: false,
-            pausedAt: nil
+            isPaused: currentIsPaused,  // 현재 pause 상태 유지
+            lastUpdateTime: Date(),
+            pausedDuration: currentPausedDuration  // 누적된 pause 시간 유지
           )
           
           let content = ActivityContent(
             state: updatedState,
-            staleDate: Date().addingTimeInterval(60),
+            staleDate: currentIsPaused ? nil : Date().addingTimeInterval(60),
             relevanceScore: 100
           )
           
@@ -121,13 +124,23 @@ class LiveActivityModule: NSObject {
         
         // Update all activities (in case ID doesn't match exactly)
         for activity in activities {
+          var newPausedDuration = activity.content.state.pausedDuration
+          
+          // 일시정지 -> 재개: 일시정지된 시간을 누적
+          if !isPaused && activity.content.state.isPaused {
+              let pauseTime = Date().timeIntervalSince(activity.content.state.lastUpdateTime)
+              newPausedDuration += pauseTime
+              print("Resuming: Adding \(pauseTime) seconds to pausedDuration")
+          }
+          
           let updatedState = ZenActivityAttributes.ContentState(
             elapsedSeconds: elapsedSeconds.intValue,
             isPaused: isPaused,
-            pausedAt: isPaused ? Date() : nil
+            lastUpdateTime: Date(),
+            pausedDuration: newPausedDuration
           )
           
-          print("Updating activity with paused state: \(isPaused)")
+          print("Updating activity - isPaused: \(isPaused), pausedDuration: \(newPausedDuration)")
           
           let content = ActivityContent(
             state: updatedState,
@@ -158,10 +171,12 @@ class LiveActivityModule: NSObject {
         
         let activities = Activity<ZenActivityAttributes>.activities
         for activity in activities {
+          // 일시정지 시작 - pausedDuration은 변경 안함
           let updatedState = ZenActivityAttributes.ContentState(
             elapsedSeconds: elapsedSeconds.intValue,
             isPaused: true,
-            pausedAt: Date()
+            lastUpdateTime: Date(),
+            pausedDuration: activity.content.state.pausedDuration
           )
           
           let content = ActivityContent(
@@ -193,10 +208,15 @@ class LiveActivityModule: NSObject {
         
         let activities = Activity<ZenActivityAttributes>.activities
         for activity in activities {
+          // 재개 시 - 일시정지 시간 누적
+          let pausedTime = Date().timeIntervalSince(activity.content.state.lastUpdateTime)
+          let newPausedDuration = activity.content.state.pausedDuration + pausedTime
+          
           let updatedState = ZenActivityAttributes.ContentState(
             elapsedSeconds: elapsedSeconds.intValue,
             isPaused: false,
-            pausedAt: nil
+            lastUpdateTime: Date(),
+            pausedDuration: newPausedDuration
           )
           
           let content = ActivityContent(
