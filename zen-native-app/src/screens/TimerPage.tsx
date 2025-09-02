@@ -42,6 +42,7 @@ export default function TimerPage() {
     showPermissionDeniedAlert,
     scheduleGoalNotification,
     scheduleCheckInReminder,
+    scheduleSmartCheckInReminders,  // 스마트 체크인 리마인더 추가
     scheduleCompletionNotification,
     scheduleHourlyNotification,
     scheduleDoubleTargetNotification,
@@ -60,6 +61,7 @@ export default function TimerPage() {
   const [showTargetPicker, setShowTargetPicker] = useState(true)
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false)
   const [checkInNotificationId, setCheckInNotificationId] = useState<string | null>(null)
+  const [checkInNotificationIds, setCheckInNotificationIds] = useState<string[]>([])  // 스마트 체크인용 배열
   const [goalNotificationId, setGoalNotificationId] = useState<string | null>(null)
   const [hourlyNotificationId, setHourlyNotificationId] = useState<string | null>(null)
   const [doubleTargetNotificationId, setDoubleTargetNotificationId] = useState<string | null>(null)
@@ -188,10 +190,12 @@ export default function TimerPage() {
         const doubleId = await scheduleDoubleTargetNotification(activity.name, targetMinutes)
         setDoubleTargetNotificationId(doubleId)
         
-        // Schedule check-in reminder for sessions >= 30 minutes
+        // Schedule smart check-in reminders that avoid conflicts with goal/2x notifications
+        // 목표/2x 알림과 충돌을 피하는 스마트 체크인 리마인더 스케줄
         if (targetSeconds >= 1800) {
-          const checkInId = await scheduleCheckInReminder(activity.name, 30)
-          setCheckInNotificationId(checkInId)
+          const checkInIds = await scheduleSmartCheckInReminders(activity.name, targetSeconds)
+          setCheckInNotificationIds(checkInIds)
+          console.log(`Scheduled ${checkInIds.length} smart check-in reminders`)
         }
       } else {
         // Infinity mode (00:00): schedule hourly notifications
@@ -228,6 +232,15 @@ export default function TimerPage() {
     if (checkInNotificationId) {
       await cancelNotification(checkInNotificationId)
       setCheckInNotificationId(null)
+    }
+    
+    // Cancel smart check-in notifications
+    // 스마트 체크인 알림 취소
+    if (checkInNotificationIds.length > 0) {
+      for (const id of checkInNotificationIds) {
+        await cancelNotification(id)
+      }
+      setCheckInNotificationIds([])
     }
     
     if (hourlyNotificationId) {
