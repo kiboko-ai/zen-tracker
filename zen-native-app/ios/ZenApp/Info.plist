@@ -73,6 +73,8 @@
     </array>
     <key>NSUserNotificationUsageDescription</key>
     <string>This app uses notifications to remind you of your focus sessions and goal achievements.</string>
+    <key>NSSupportsLiveActivities</key>
+    <true/>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
   </dict>

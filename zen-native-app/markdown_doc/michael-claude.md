@@ -1193,3 +1193,214 @@ for (let checkInTime = 1800; checkInTime <= maxDuration; checkInTime += 1800) {
 - **브랜치명**: feature/data-export-import-250901
 - **베이스 브랜치**: feature/live-activity-250827
 - **주요 기능**: 데이터 백업/복원 기능 완성
+
+---
+
+## 2025-09-02 작업 내용 (화요일 19:57)
+
+### iOS Live Activity 구현 완료 ✅
+
+**목적**: iOS 16.1+ 기기에서 잠금화면에 실시간 타이머를 표시하여 사용자가 앱을 열지 않고도 진행 상황 확인
+
+#### 1. Live Activity 완전 구현
+
+##### A. 핵심 기능
+- **자동 업데이트 타이머**: `Text(timerInterval:)` 사용으로 수동 업데이트 불필요
+- **잠금화면 표시**: 활동명, 실시간 타이머, 진행률 바
+- **Dynamic Island 지원**: iPhone 14 Pro+ 기기에서 컴팩트/확장 뷰
+- **백그라운드 동작**: 앱이 백그라운드에서도 타이머 계속 표시
+
+##### B. 기술 구현
+- **Native Module**: Swift로 구현된 LiveActivityModule
+- **Widget Extension**: ZenActivityWidget 타겟 추가
+- **ActivityKit Framework**: iOS 16.1+ Live Activity API 활용
+- **React Native Bridge**: Objective-C 브릿지로 JS와 연결
+
+#### 2. 생성/수정된 파일
+
+##### A. Native Module 파일
+```
+ios/ZenApp/
+├── LiveActivityModule.swift       # Live Activity 관리 Native Module
+├── LiveActivityModule.m           # Objective-C 브릿지
+└── ZenApp-Bridging-Header.h      # Swift-ObjC 브릿지 헤더
+```
+
+##### B. Widget Extension 파일
+```
+ios/ZenActivityWidget/
+├── ZenActivityWidgetBundle.swift          # Widget 번들 (@main)
+├── ZenActivityWidgetLiveActivity.swift    # Live Activity UI
+├── ZenActivityWidget.swift                # 홈 스크린 위젯 (placeholder)
+├── ZenActivityWidgetControl.swift         # Control 위젯 (placeholder)
+└── Info.plist                            # Widget 설정
+```
+
+##### C. TypeScript 통합
+```
+src/services/notifications/
+└── LiveActivityService.ts         # Live Activity 서비스 (완성)
+```
+
+#### 3. 주요 문제 해결 과정
+
+##### A. Live Activity가 잠금화면에 표시되지 않던 문제
+- **원인**: Info.plist 설정 누락, Mock 구현 상태
+- **해결**: 
+  - NSSupportsLiveActivities = true 설정
+  - 실제 ActivityKit 코드 구현
+  - Widget Extension 타겟 추가
+
+##### B. 타이머가 업데이트되지 않던 문제 (가장 어려웠던 이슈)
+- **증상**: 잠금화면에서 0:00 또는 0:01에서 멈춤
+- **시도한 방법들**:
+  1. 매초 update() 호출 → 실패
+  2. liveActivityId를 useEffect 의존성 추가 → 실패
+  3. staleDate, relevanceScore 조정 → 실패
+- **최종 해결**: `Text(timerInterval:)` SwiftUI 컴포넌트 사용
+  ```swift
+  Text(timerInterval: context.attributes.startTime...endDate, countsDown: false)
+  ```
+
+##### C. Widget Extension 컴파일 에러
+- **에러**: "The compiler is unable to type-check this expression in reasonable time"
+- **원인**: 복잡한 View 구조로 인한 타입 추론 시간 초과
+- **해결**: LockScreenLiveActivityView를 별도 struct로 분리
+
+##### D. Info.plist 설정 에러
+- **에러**: "NSExtensionPrincipalClass key is not allowed for widgetkit-extension"
+- **해결**: NSExtensionPrincipalClass 키 제거 (@main 어노테이션 사용)
+
+#### 4. 잠금화면 디자인 커스터마이징 가이드
+
+잠금화면 UI를 수정하려면 아래 파일을 편집하세요:
+
+##### 📍 수정 위치: `/ios/ZenActivityWidget/ZenActivityWidgetLiveActivity.swift`
+
+##### LockScreenLiveActivityView 구조 (52-94줄)
+```swift
+struct LockScreenLiveActivityView: View {
+    let context: ActivityViewContext<ZenActivityAttributes>
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            // 1️⃣ 헤더 영역 (58-64줄)
+            HStack {
+                Image(systemName: "timer")          // 아이콘
+                    .foregroundColor(.orange)        // 아이콘 색상
+                Text(context.attributes.activityName) // 활동명
+                    .font(.headline)                 // 폰트 스타일
+                Spacer()
+            }
+            
+            // 2️⃣ 타이머 영역 (66-72줄)
+            Text(timerInterval: ...)               // 자동 업데이트 타이머
+                .font(.largeTitle)                 // 폰트 크기
+                .fontWeight(.bold)                 // 폰트 굵기
+                .monospacedDigit()                 // 고정폭 숫자
+                .foregroundColor(.white)           // 텍스트 색상
+            
+            // 3️⃣ 진행률 바 영역 (74-90줄)
+            ProgressView(value: progress)
+                .tint(.orange)                     // 진행률 바 색상
+            
+            HStack {
+                Text("목표: \(targetMinutes)분")    // 목표 시간 텍스트
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                Spacer()
+                Text("\(Int(progress * 100))%")    // 퍼센티지
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+        }
+        .padding()                                 // 전체 패딩
+    }
+}
+```
+
+##### 커스터마이징 예시
+
+1. **색상 변경**:
+   ```swift
+   .foregroundColor(.blue)  // 원하는 색상으로 변경
+   .tint(.green)           // 진행률 바 색상 변경
+   ```
+
+2. **아이콘 변경**:
+   ```swift
+   Image(systemName: "flame.fill")  // SF Symbols 아이콘
+   ```
+
+3. **폰트 변경**:
+   ```swift
+   .font(.system(size: 40, weight: .heavy, design: .rounded))
+   ```
+
+4. **레이아웃 변경**:
+   ```swift
+   VStack(spacing: 20)  // 간격 조정
+   HStack(alignment: .center)  // 정렬 변경
+   ```
+
+#### 5. Dynamic Island 커스터마이징 (iPhone 14 Pro+)
+
+##### 📍 수정 위치: 같은 파일의 35-47줄
+
+```swift
+DynamicIsland {
+    // 확장 뷰
+    DynamicIslandExpandedRegion(.center) {
+        Text(context.attributes.activityName)
+    }
+} compactLeading: {
+    // 왼쪽 컴팩트 뷰
+    Image(systemName: "timer")
+} compactTrailing: {
+    // 오른쪽 컴팩트 뷰
+    Text("\(context.state.elapsedSeconds / 60)m")
+} minimal: {
+    // 최소화 뷰
+    Image(systemName: "timer")
+}
+```
+
+#### 6. 현재 Live Activity 동작 상태
+
+✅ **정상 작동 기능**:
+- 타이머 시작 시 Live Activity 자동 시작
+- 잠금화면에서 실시간 타이머 자동 업데이트
+- 진행률 바 표시
+- 타이머 종료 시 Live Activity 자동 제거
+- iPhone X/XS (iOS 16.6+) 완벽 지원
+
+⚠️ **제한사항**:
+- Dynamic Island는 iPhone 14 Pro 이상에서만 표시
+- iOS 16.1 미만 기기에서는 사용 불가
+- 시뮬레이터에서는 테스트 불가 (실제 기기 필요)
+
+#### 7. 테스트 완료 항목
+
+- ✅ Native Module 연결 확인
+- ✅ Widget Extension 빌드 성공
+- ✅ Live Activity 잠금화면 표시
+- ✅ 타이머 자동 업데이트 작동
+- ✅ 진행률 바 정상 표시
+- ✅ 앱 종료 시 알림 자동 취소
+- ✅ TypeScript 에러 없음
+
+#### 8. 기술 스택 요약
+
+- **iOS Native**: Swift 5, ActivityKit, WidgetKit
+- **Bridge**: Objective-C, React Native Native Modules
+- **Widget**: SwiftUI, Widget Extension
+- **TypeScript**: LiveActivityService 통합
+- **최소 iOS 버전**: 16.1 (Live Activity 요구사항)
+
+#### 9. 향후 개선 가능 사항
+
+- 홈 스크린 위젯 구현 (ZenActivityWidget.swift 활용)
+- 일시정지 상태 표시 추가
+- 커스텀 알림음 추가
+- Apple Watch 연동
+- 여러 활동 동시 추적 지원

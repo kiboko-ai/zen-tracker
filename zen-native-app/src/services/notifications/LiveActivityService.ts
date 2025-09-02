@@ -1,17 +1,12 @@
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 
 /**
- * Live Activity Service (Coming Soon)
+ * Live Activity Service
  * 
  * Live Activities allow displaying real-time information on the Lock Screen
- * and Dynamic Island without notification permissions (iOS 16.1+)
+ * without notification permissions (iOS 16.1+)
  * 
- * Implementation requires:
- * 1. Native iOS module with ActivityKit framework
- * 2. Widget Extension target in Xcode
- * 3. Activity attributes and content state definitions
- * 
- * @todo Implement native module for Live Activities
+ * Native Module is now connected and ready to use
  */
 class LiveActivityService {
   private static instance: LiveActivityService;
@@ -29,12 +24,22 @@ class LiveActivityService {
    * Check if Live Activities are available
    * @returns true if iOS 16.1+ and Live Activities are supported
    */
-  isAvailable(): boolean {
-    // Coming soon: Will check for iOS 16.1+ and native module availability
+  async isAvailable(): Promise<boolean> {
     if (Platform.OS === 'ios' && parseInt(Platform.Version.toString()) >= 16) {
-      // TODO: Check if native module exists
-      // return NativeModules.LiveActivityModule !== undefined;
-      return false; // Not yet implemented
+      // Check if native module exists
+      if (!NativeModules.LiveActivityModule) {
+        console.log('LiveActivityModule not found');
+        return false;
+      }
+      
+      try {
+        // Check if activities are enabled in settings
+        const enabled = await NativeModules.LiveActivityModule.areActivitiesEnabled();
+        return enabled;
+      } catch (error) {
+        console.log('Error checking Live Activity availability:', error);
+        return false;
+      }
     }
     return false;
   }
@@ -44,71 +49,97 @@ class LiveActivityService {
    * @param activityName Name of the activity
    * @param targetMinutes Target duration in minutes
    * @returns Activity ID or null if not available
-   * 
-   * @todo Implement with native module
    */
   async startTimerActivity(activityName: string, targetMinutes: number): Promise<string | null> {
-    if (!this.isAvailable()) {
+    const available = await this.isAvailable();
+    if (!available) {
       console.log('Live Activities not available');
       return null;
     }
 
-    // Coming soon: Start Live Activity via native module
-    // Example implementation:
-    // const activityId = await NativeModules.LiveActivityModule.startActivity({
-    //   activityName,
-    //   targetMinutes,
-    //   startTime: Date.now()
-    // });
-    
-    console.log('Live Activity feature coming soon');
-    return null;
+    try {
+      // Start Live Activity via native module
+      const activityId = await NativeModules.LiveActivityModule.startActivity(
+        activityName,
+        targetMinutes
+      );
+      
+      console.log(`Live Activity started with ID: ${activityId}`);
+      return activityId;
+    } catch (error) {
+      console.error('Failed to start Live Activity:', error);
+      return null;
+    }
   }
 
   /**
    * Update an existing Live Activity
    * @param activityId The ID of the activity to update
-   * @param elapsedMinutes Current elapsed time in minutes
-   * @param isGoalReached Whether the goal has been reached
-   * 
-   * @todo Implement with native module
+   * @param elapsedSeconds Current elapsed time in seconds
+   * @param isPaused Whether the timer is paused
    */
   async updateActivity(
     activityId: string, 
-    elapsedMinutes: number, 
-    isGoalReached: boolean
+    elapsedSeconds: number,
+    isPaused: boolean = false
   ): Promise<void> {
-    if (!this.isAvailable()) {
+    const available = await this.isAvailable();
+    if (!available) {
       return;
     }
 
-    // Coming soon: Update Live Activity via native module
-    // Example implementation:
-    // await NativeModules.LiveActivityModule.updateActivity(activityId, {
-    //   elapsedMinutes,
-    //   isGoalReached,
-    //   updatedAt: Date.now()
-    // });
-    
-    console.log('Live Activity update coming soon');
+    try {
+      // Debug: Check what's available
+      console.log('🔍 LiveActivityModule exists?', !!NativeModules.LiveActivityModule);
+      console.log('🔍 Available methods:', Object.keys(NativeModules.LiveActivityModule || {}));
+      
+      // Use specific pause/resume methods
+      if (isPaused === true) {
+        console.log('🔴 Calling pauseActivity:', activityId, elapsedSeconds);
+        
+        // Check if the method exists
+        if (NativeModules.LiveActivityModule?.pauseActivity) {
+          await NativeModules.LiveActivityModule.pauseActivity(
+            activityId,
+            elapsedSeconds
+          );
+        } else {
+          console.error('❌ pauseActivity method not found!');
+          console.log('Available methods:', Object.keys(NativeModules.LiveActivityModule || {}));
+          // Fallback: just don't update
+          return;
+        }
+      } else {
+        // Use the original method for normal updates
+        console.log('🟢 Calling updateActivity - RUNNING:', activityId, elapsedSeconds);
+        await NativeModules.LiveActivityModule.updateActivity(
+          activityId,
+          elapsedSeconds
+        );
+      }
+    } catch (error) {
+      console.error('Failed to update Live Activity:', error);
+      console.error('Error stack:', error.stack);
+    }
   }
 
   /**
    * End a Live Activity
    * @param activityId The ID of the activity to end
-   * 
-   * @todo Implement with native module
    */
   async endActivity(activityId: string): Promise<void> {
-    if (!this.isAvailable()) {
+    const available = await this.isAvailable();
+    if (!available) {
       return;
     }
 
-    // Coming soon: End Live Activity via native module
-    // Example implementation:
-    // await NativeModules.LiveActivityModule.endActivity(activityId);
-    
-    console.log('Live Activity end coming soon');
+    try {
+      // End Live Activity via native module
+      await NativeModules.LiveActivityModule.endActivity(activityId);
+      console.log(`Live Activity ended: ${activityId}`);
+    } catch (error) {
+      console.error('Failed to end Live Activity:', error);
+    }
   }
 
   /**

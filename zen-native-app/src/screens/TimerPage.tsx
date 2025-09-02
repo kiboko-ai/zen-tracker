@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  NativeModules,
   AppState,
   AppStateStatus,
 } from 'react-native'
@@ -21,6 +22,7 @@ import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 import BackgroundTimer from '../services/BackgroundTimer'
 import { useNotifications } from '../hooks/useNotifications'
+import LiveActivityService from '../services/notifications/LiveActivityService'
 
 type TimerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Timer'>
 type TimerScreenRouteProp = RouteProp<RootStackParamList, 'Timer'>
@@ -79,12 +81,19 @@ export default function TimerPage() {
   const targetSeconds = targetHours * 3600 + targetMinutes * 60
 
   useEffect(() => {
+    console.log('🔴 useEffect triggered - isRunning:', isRunning, 'isPaused:', isPaused, 'liveActivityId:', liveActivityId)
     if (isRunning && !isPaused && startTimeRef.current) {
       // Use BackgroundTimer for accurate time tracking
       const id = BackgroundTimer.setBackgroundInterval(() => {
         if (startTimeRef.current) {
           const elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
           setSeconds(elapsed)
+          
+          // Update Live Activity every second (only when not paused)
+          if (liveActivityId && !isPaused) {
+            console.log('🟡 Updating Live Activity:', liveActivityId, 'with', elapsed, 'seconds')
+            LiveActivityService.updateActivity(liveActivityId, elapsed, false)
+          }
           
           // Animate completion dot when goal is reached
           if (elapsed >= targetSeconds && targetSeconds > 0) {
@@ -122,7 +131,7 @@ export default function TimerPage() {
         intervalRef.current = null
       }
     }
-  }, [isRunning, isPaused, targetSeconds, completionDotAnim])
+  }, [isRunning, isPaused, targetSeconds, completionDotAnim, liveActivityId, hasNotifiedGoal, hasNotifiedDouble])
 
 
   useEffect(() => {
@@ -206,18 +215,26 @@ export default function TimerPage() {
     
     // Start Live Activity (iOS 16.1+, no permission needed)
     if (activity && targetSeconds > 0) {
+      console.log('🟢 Starting Live Activity...')
       const activityId = await startLiveActivity(activity.name, Math.floor(targetSeconds / 60))
+      console.log('🟢 Live Activity ID received:', activityId)
       setLiveActivityId(activityId)
     }
   }
 
-  const handlePause = () => {
+  const handlePause = async () => {
+    console.log('⏸️ PAUSE BUTTON PRESSED')
     pauseSession()
     pauseStartRef.current = new Date()
     setIsPaused(true)
+    
+    // SIMPLE SOLUTION: Just stop updating!
+    // The Live Activity will stay at the current time
+    console.log('⏸️ Paused - Live Activity will stop updating')
   }
 
-  const handleResume = () => {
+  const handleResume = async () => {
+    console.log('▶️ RESUME BUTTON PRESSED')
     resumeSession()
     if (pauseStartRef.current) {
       const pauseDuration = Math.floor((new Date().getTime() - pauseStartRef.current.getTime()) / 1000)
@@ -225,6 +242,9 @@ export default function TimerPage() {
       pauseStartRef.current = null
     }
     setIsPaused(false)
+    
+    // SIMPLE SOLUTION: Updates will resume automatically in useEffect
+    console.log('▶️ Resumed - Live Activity will start updating again')
   }
 
   const handleStop = async () => {
@@ -267,7 +287,10 @@ export default function TimerPage() {
     // }
     
     // End Live Activity if exists
-    // TODO: Implement when Live Activity native module is ready
+    if (liveActivityId) {
+      await LiveActivityService.endActivity(liveActivityId)
+      setLiveActivityId(null)
+    }
     
     endSession()
     navigation.navigate('Report')
