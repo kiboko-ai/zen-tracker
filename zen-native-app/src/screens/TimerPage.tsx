@@ -82,18 +82,21 @@ export default function TimerPage() {
 
   useEffect(() => {
     console.log('🔴 useEffect triggered - isRunning:', isRunning, 'isPaused:', isPaused, 'liveActivityId:', liveActivityId)
-    if (isRunning && !isPaused && startTimeRef.current) {
+    if (isRunning && startTimeRef.current) {  // Remove !isPaused condition to keep updating Live Activity
       // Use BackgroundTimer for accurate time tracking
       const id = BackgroundTimer.setBackgroundInterval(() => {
         if (startTimeRef.current) {
           const elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
-          setSeconds(elapsed)
           
-          // Update Live Activity periodically (every 30 seconds) for accuracy
-          // The widget uses timerInterval so it updates itself automatically
-          if (liveActivityId && !isPaused && elapsed % 30 === 0) {
-            // Periodic sync to maintain accuracy
-            LiveActivityService.updateActivity(liveActivityId, elapsed, false)
+          // Only update seconds when not paused
+          if (!isPaused) {
+            setSeconds(elapsed)
+          }
+          
+          // ALWAYS update Live Activity to reflect current state
+          if (liveActivityId) {
+            console.log(`📱 Updating Live Activity - elapsed: ${elapsed}, isPaused: ${isPaused}`)
+            LiveActivityService.updateActivity(liveActivityId, elapsed, isPaused)
           }
           
           // Animate completion dot when goal is reached
@@ -229,14 +232,12 @@ export default function TimerPage() {
     pauseStartRef.current = new Date()
     setIsPaused(true)
     
-    // IMPORTANT: Send pause state to Live Activity
+    // Send pause state to Live Activity
     if (liveActivityId && startTimeRef.current) {
       const currentElapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
-      console.log('⏸️ Sending pause update with elapsed:', currentElapsed)
-      // Send with isPaused = true
+      console.log('⏸️ Sending pause state with elapsed:', currentElapsed)
       await LiveActivityService.updateActivity(liveActivityId, currentElapsed, true)
     }
-    console.log('⏸️ Paused - Live Activity frozen at current time')
   }
 
   const handleResume = async () => {
@@ -249,13 +250,12 @@ export default function TimerPage() {
     }
     setIsPaused(false)
     
-    // Send immediate update when resuming
+    // Send resume state to Live Activity
     if (liveActivityId && startTimeRef.current) {
       const currentElapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
-      console.log('▶️ Sending resume update with elapsed:', currentElapsed)
+      console.log('▶️ Sending resume state with elapsed:', currentElapsed)
       await LiveActivityService.updateActivity(liveActivityId, currentElapsed, false)
     }
-    console.log('▶️ Resumed - Live Activity updates will continue')
   }
 
   const handleStop = async () => {

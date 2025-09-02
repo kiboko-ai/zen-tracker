@@ -1468,3 +1468,145 @@ Group {
 
 #### 결론
 iOS의 Live Activity는 실시간 스포츠 스코어, 배달 추적 등 지속적으로 업데이트되는 정보를 표시하는 데 최적화되어 있으며, 정밀한 타이머 제어(일시정지/재개)에는 제한사항이 있음. 현재 기술적 제약으로 인해 완벽한 일시정지 동기화는 구현하지 못함.
+
+---
+
+## 2025-09-02 추가 작업 (Live Activity 심층 분석)
+
+### Fiti-Run과 Zen-Tracker 비교 분석
+
+#### Fiti-Run 구현 방식
+1. **파일 구조**:
+   - `ios/FitiRunWidget/RunningActivityAttributes.swift`: Live Activity 데이터 모델
+   - `ios/FitiRunWidget/FitiRunLiveActivity.swift`: Widget UI 구현
+   - `ios/FitiRunWidget/FitiRunWidgetBundle.swift`: Widget Bundle (@main)
+   - `ios/FitiRunNative/LiveActivityModule.swift`: Native Module
+
+2. **핵심 동작**:
+   - **5초마다 업데이트** 전송 (백그라운드에서도)
+   - 일시정지 상태에서도 계속 업데이트
+   - Widget은 Timer 없이 단순 computed property 사용
+   ```swift
+   var actualElapsedTime: String {
+       let now = Date()
+       let elapsed = now.timeIntervalSince(context.attributes.startTime) - context.state.pausedDuration
+       return formatTime(elapsed)
+   }
+   ```
+
+#### Zen-Tracker 초기 문제점
+1. **30초마다만 업데이트** (너무 긴 주기)
+2. **일시정지 시 업데이트 중단** (`if (!isPaused)` 조건)
+3. **Widget에 Timer Publisher 추가 시도** (Live Activity는 자체 타이머 지원 안 함)
+4. **복잡한 시간 계산 로직**
+
+### iOS Live Activity의 근본적 제약사항
+
+#### 1. Live Activity는 독립 프로세스
+- Widget Extension은 **별도 프로세스**에서 실행
+- 앱과 **메모리 공유 불가**
+- Widget은 **자체 코드 실행 불가** (수동적)
+
+#### 2. Widget은 "Static View"
+```swift
+// ❌ 작동하지 않는 코드
+struct LockScreenView: View {
+    @State var timer = Timer.publish(every: 1, ...) // 실행 안 됨
+    
+    var body: some View {
+        Text("\(Date())") // 자동 업데이트 안 됨
+    }
+}
+```
+- **자체 Timer 실행 불가**
+- `onReceive`, `onAppear` 등 이벤트 핸들러 **작동 안 함**
+- 업데이트를 받을 때만 UI 갱신
+
+#### 3. 백그라운드 실행 제한
+- JavaScript 타이머 제한 (iOS 배터리 절약)
+- `BackgroundTimer`도 제한적
+- Live Activity 업데이트 불규칙
+
+#### 4. Apple의 의도적 설계
+- **배터리 수명** 보호 우선
+- **시스템 리소스** 절약
+- 간헐적 업데이트용으로 설계 (실시간 타이머 X)
+
+### 최종 해결 방법
+
+#### TimerPage.tsx 수정
+```typescript
+// 이전 (문제)
+if (isRunning && !isPaused && startTimeRef.current) {
+    // 일시정지하면 interval 중단
+}
+
+// 수정 (해결)
+if (isRunning && startTimeRef.current) {
+    const id = BackgroundTimer.setBackgroundInterval(() => {
+        // 일시정지 중에도 계속 실행
+        if (!isPaused) {
+            setSeconds(elapsed) // UI만 업데이트
+        }
+        // Live Activity는 항상 업데이트
+        if (liveActivityId) {
+            LiveActivityService.updateActivity(liveActivityId, elapsed, isPaused)
+        }
+    }, 1000)
+}
+```
+
+#### ZenActivityWidgetLiveActivity.swift 수정
+```swift
+// 이전 (복잡)
+var actualElapsedTime: String {
+    if context.state.isPaused {
+        return formatTime(seconds: context.state.elapsedSeconds)
+    } else {
+        let now = Date()
+        let elapsed = now.timeIntervalSince(context.attributes.startTime) - context.state.pausedDuration
+        return formatTime(seconds: Int(elapsed))
+    }
+}
+
+// 수정 (단순)
+var actualElapsedTime: String {
+    // 앱에서 받은 값 그대로 표시
+    return formatTime(seconds: context.state.elapsedSeconds)
+}
+```
+
+### 핵심 인사이트
+
+#### 왜 잠금화면 타이머가 멈춰있는가?
+1. **Widget은 자체 타이머를 실행할 수 없음**
+2. **앱에서 업데이트를 보내야만 변경됨**
+3. **백그라운드에서는 업데이트가 제한적**
+
+#### 실제 작동 방식
+1. 앱이 매초 `elapsedSeconds` 값을 계산해서 전송
+2. Widget은 받은 값을 **그대로 표시**만 함
+3. 일시정지 시에도 계속 업데이트 (값은 고정)
+4. Widget은 "display-only" 역할
+
+### 한계와 대안
+
+#### 완벽한 실시간 타이머는 불가능
+- iOS의 근본적 제약사항
+- 배터리/성능 최적화 때문에 의도적 제한
+
+#### 차선책
+1. **포그라운드**: 매초 업데이트 ✅
+2. **백그라운드**: 5-10초 주기 (배터리 고려)
+3. **일시정지**: 즉시 반영 (마지막 값 고정)
+
+#### Apple 공식 대안
+1. **Push Notification**으로 업데이트 (서버 필요)
+2. **ActivityKit 타이머 API** (제한적)
+3. **Dynamic Island**에서만 부분 지원
+
+### 교훈
+- Live Activity는 "실시간 타이머"용이 아님
+- 주기적 업데이트 + 정적 표시가 한계
+- iOS 시스템 제약을 이해하고 설계해야 함
+- Fiti-Run도 5초 단위로 "점프"하는 방식

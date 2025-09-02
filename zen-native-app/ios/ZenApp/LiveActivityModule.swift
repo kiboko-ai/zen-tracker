@@ -93,7 +93,7 @@ class LiveActivityModule: NSObject {
           
           let content = ActivityContent(
             state: updatedState,
-            staleDate: currentIsPaused ? nil : Date().addingTimeInterval(60),
+            staleDate: Date().addingTimeInterval(2),  // 2초 후 stale (일시정지 상태 무관)
             relevanceScore: 100
           )
           
@@ -144,7 +144,7 @@ class LiveActivityModule: NSObject {
           
           let content = ActivityContent(
             state: updatedState,
-            staleDate: isPaused ? nil : Date().addingTimeInterval(60),
+            staleDate: Date().addingTimeInterval(2),  // 2초 후 stale (항상 업데이트)
             relevanceScore: 100
           )
           

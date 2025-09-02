@@ -33,8 +33,10 @@
   struct ZenActivityWidgetLiveActivity: Widget {
       var body: some WidgetConfiguration {
           ActivityConfiguration(for: ZenActivityAttributes.self) { context in
-              // Lock screen UI - 자동 업데이트 타이머 사용
+              // Lock screen UI - 1초마다 업데이트
               LockScreenLiveActivityView(context: context)
+                  .activitySystemActionForegroundColor(.white)
+                  .activityBackgroundTint(Color.black.opacity(0.5))
 
           } dynamicIsland: { context in
               DynamicIsland {
@@ -56,16 +58,23 @@
   struct LockScreenLiveActivityView: View {
       let context: ActivityViewContext<ZenActivityAttributes>
       
-      // 시간 포맷 함수
+      // 실시간 경과 시간 표시 - 앱에서 받은 elapsedSeconds 사용
+      var actualElapsedTime: String {
+          // 앱에서 매초 업데이트되는 elapsedSeconds를 그대로 표시
+          // isPaused 상태와 무관하게 항상 앱과 동기화된 시간 표시
+          return formatTime(seconds: context.state.elapsedSeconds)
+      }
+      
+      // 시간 포맷 함수 - TimerPage.tsx의 formatTimeDisplay와 동일
       func formatTime(seconds: Int) -> String {
           let hours = seconds / 3600
           let minutes = (seconds % 3600) / 60
           let secs = seconds % 60
           
           if hours > 0 {
-              return String(format: "%d:%02d:%02d", hours, minutes, secs)
+              return String(format: "%02d:%02d:%02d", hours, minutes, secs)
           } else {
-              return String(format: "%d:%02d", minutes, secs)
+              return String(format: "%02d:%02d", minutes, secs)
           }
       }
       
@@ -78,28 +87,21 @@
                   Text(context.attributes.activityName)
                       .font(.headline)
                   Spacer()
-              }
-              
-              // 타이머 표시 - pausedDuration을 활용한 정확한 계산
-              Group {
+                  
+                  // 일시정지 상태 표시
                   if context.state.isPaused {
-                      // 일시정지: 현재 값 고정 표시
-                      Text(formatTime(seconds: context.state.elapsedSeconds))
-                          .font(.largeTitle)
-                          .fontWeight(.bold)
-                          .monospacedDigit()
-                          .foregroundColor(.gray)
-                  } else {
-                      // 실행 중: 시작 시간과 pausedDuration을 사용한 자동 업데이트
-                      // startTime + pausedDuration을 더해서 실제 타이머 시작점 계산
-                      let adjustedStart = context.attributes.startTime.addingTimeInterval(context.state.pausedDuration)
-                      Text(timerInterval: adjustedStart...adjustedStart.addingTimeInterval(28800), countsDown: false)
-                          .font(.largeTitle)
-                          .fontWeight(.bold)
-                          .monospacedDigit()
-                          .foregroundColor(.white)
+                      Image(systemName: "pause.circle.fill")
+                          .foregroundColor(.yellow)
+                          .font(.title3)
                   }
               }
+              
+              // 타이머 표시 - 앱에서 매초 업데이트를 받음
+              Text(actualElapsedTime)
+                  .font(.largeTitle)
+                  .fontWeight(.bold)
+                  .monospacedDigit()
+                  .foregroundColor(context.state.isPaused ? .gray : .white)
               
               // Progress Bar
               if context.attributes.targetSeconds > 0 {
