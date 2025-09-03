@@ -37,6 +37,7 @@ export default function ReportPage() {
   const [chartView, setChartView] = useState<'timeline' | 'rings'>('timeline')
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
   
   const now = selectedDate
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
@@ -101,6 +102,41 @@ export default function ReportPage() {
       return `${hours.toFixed(1)} hour`
     }
     return `${minutes} min`
+  }
+
+  const handleMenuPress = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Import Data', 'Export Data'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            Alert.alert(
+              'Import Data',
+              'Import your activities and sessions from a JSON or CSV file. You can choose to replace existing data or merge with it.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Continue', onPress: handleImport }
+              ]
+            )
+          } else if (buttonIndex === 2) {
+            Alert.alert(
+              'Export Data',
+              'Export all your activities and sessions to a JSON file for backup or transfer to another device.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Continue', onPress: handleExport }
+              ]
+            )
+          }
+        }
+      )
+    } else {
+      // For Android, toggle menu visibility
+      setShowMenu(!showMenu)
+    }
   }
 
   const handleExport = async () => {
@@ -460,7 +496,7 @@ export default function ReportPage() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} onTouchStart={() => showMenu && setShowMenu(false)}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => (navigation as any).navigate('Home')}
@@ -469,28 +505,50 @@ export default function ReportPage() {
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Report</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            onPress={handleImport}
-            style={styles.headerButton}
-            disabled={isImporting}
-          >
-            <View style={styles.buttonContent}>
-              <Text style={[styles.headerButtonText, isImporting && styles.headerButtonDisabled]}>📂</Text>
-              <Text style={[styles.buttonLabel, isImporting && styles.headerButtonDisabled]}>import</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleExport}
-            style={styles.headerButton}
-            disabled={isExporting}
-          >
-            <View style={styles.buttonContent}>
-              <Text style={[styles.headerButtonText, isExporting && styles.headerButtonDisabled]}>💾</Text>
-              <Text style={[styles.buttonLabel, isExporting && styles.headerButtonDisabled]}>export</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={handleMenuPress}
+          style={styles.menuButton}
+        >
+          <Text style={styles.menuButtonText}>⋮</Text>
+        </TouchableOpacity>
+        
+        {/* Android dropdown menu */}
+        {Platform.OS === 'android' && showMenu && (
+          <View style={styles.dropdownMenu}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowMenu(false)
+                Alert.alert(
+                  'Import Data',
+                  'Import your activities and sessions from a JSON or CSV file. You can choose to replace existing data or merge with it.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Continue', onPress: handleImport }
+                  ]
+                )
+              }}
+              style={styles.dropdownItem}
+            >
+              <Text style={styles.dropdownItemText}>Import Data</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setShowMenu(false)
+                Alert.alert(
+                  'Export Data',
+                  'Export all your activities and sessions to a JSON file for backup or transfer to another device.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Continue', onPress: handleExport }
+                  ]
+                )
+              }}
+              style={styles.dropdownItem}
+            >
+              <Text style={styles.dropdownItemText}>Export Data</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <View style={styles.tabContainer}>
@@ -790,6 +848,43 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     flex: 1,
+  },
+  menuButton: {
+    flex: 1,
+    alignItems: 'flex-end',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  menuButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 50,
+    right: 24,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minWidth: 150,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: '#000',
   },
   headerButtons: {
     flex: 1,
