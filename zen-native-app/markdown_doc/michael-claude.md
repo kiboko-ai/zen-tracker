@@ -1610,3 +1610,310 @@ var actualElapsedTime: String {
 - 주기적 업데이트 + 정적 표시가 한계
 - iOS 시스템 제약을 이해하고 설계해야 함
 - Fiti-Run도 5초 단위로 "점프"하는 방식
+
+---
+
+## 2025-01-03 작업 내용
+
+### 1. 테스트용 30분 알림 구현 ✅
+
+**목적**: 매일 오전 9시 알림이 작동하지 않는 문제를 디버깅하기 위해 30분마다 반복 알림 구현
+
+#### A. 구현 파일
+
+##### NotificationService.ts (451-546줄)
+```typescript
+// 새로 추가된 테스트 메서드들
+async scheduleTestReminder(): Promise<string | null>  // 30분마다 테스트 알림
+async cancelTestReminder(): Promise<boolean>          // 테스트 알림 취소
+async isTestReminderScheduled(): Promise<boolean>     // 테스트 알림 상태 확인
+
+// 알림 내용
+title: '◉ Time to Focus (Test)'
+body: 'This is a test notification. It will repeat every 30 minutes.'
+trigger: { seconds: 1800, repeats: true }  // 30분 = 1800초
+```
+
+##### App.tsx (44줄)
+```typescript
+const TEST_MODE = true; // 테스트 모드 활성화/비활성화
+```
+
+#### B. 원상복구 방법
+
+**테스트 완료 후 프로덕션 모드로 전환:**
+1. App.tsx 44번 줄 수정: `const TEST_MODE = false;`
+2. 앱 재시작하면 자동으로:
+   - 테스트 알림 취소
+   - 매일 오전 9시 알림으로 전환
+
+#### C. 테스트 결과 대기 중
+- 첫 알림: 앱 실행 후 30분
+- 이후: 30분마다 계속 반복
+- 확인사항: 잠금화면, 백그라운드 상태에서도 정상 작동하는지
+
+---
+
+### 2. Zen과 Fiti-Run의 Widget 구조 차이점 분석 🔍
+
+#### A. Widget Bundle 구조 차이
+
+**Zen-Tracker (ZenActivityWidgetBundle.swift)**
+```swift
+@main
+struct ZenActivityWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        ZenActivityWidget()         // ✅ 홈 스크린 위젯 (구현됨)
+        ZenActivityWidgetControl()   // ✅ Control 위젯 (placeholder)
+        ZenActivityWidgetLiveActivity() // ✅ Live Activity
+    }
+}
+```
+
+**Fiti-Run (FitiRunWidgetBundle.swift)**
+```swift
+@main
+struct FitiRunWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        FitiRunLiveActivityWidget()  // ⚠️ Live Activity만 있음
+    }
+}
+```
+
+#### B. 핵심 차이점
+
+| 항목 | Zen-Tracker | Fiti-Run |
+|-----|------------|----------|
+| **홈 스크린 위젯** | ✅ 구현됨 (ZenActivityWidget) | ❌ 없음 |
+| **Control 위젯** | ✅ 구현됨 (placeholder) | ❌ 없음 |
+| **Live Activity** | ✅ 구현됨 | ✅ 구현됨 |
+| **별도 데이터 모델** | ❌ 통합됨 | ✅ RunningActivityAttributes.swift |
+| **위젯 Bundle 개수** | 3개 | 1개 |
+
+#### C. 홈 스크린 위젯 차이로 인한 현상
+
+**Zen-Tracker의 동작:**
+1. 앱을 길게 누르면 → "위젯 편집" 메뉴 표시
+2. 홈 스크린에 위젯 추가 가능
+3. `ZenActivityWidget`이 `StaticConfiguration`으로 구성됨
+4. 5시간 동안의 Timeline 제공 (1시간마다 업데이트)
+
+**Fiti-Run의 동작:**
+1. 앱을 길게 누르면 → 위젯 메뉴 없음
+2. Live Activity만 지원 (잠금화면/Dynamic Island)
+3. 홈 스크린 위젯 기능 없음
+
+#### D. 일시정지 동기화 문제 원인
+
+**구조적 문제:**
+1. **Zen**: 홈 스크린 위젯과 Live Activity가 동시 존재
+   - 두 위젯 간 상태 동기화 복잡
+   - Timeline Provider와 ActivityKit의 충돌 가능성
+
+2. **Fiti-Run**: Live Activity만 존재
+   - 단순한 구조로 충돌 없음
+   - 일시정지 상태 관리가 상대적으로 간단
+
+**코드 레벨 문제:**
+```swift
+// Zen: ContentState에 pausedDuration 추가했지만 활용 안 됨
+public var pausedDuration: TimeInterval  // 누적된 일시정지 시간
+
+// Fiti-Run: pausedDuration을 실제로 계산에 사용
+var actualElapsedTime: String {
+    let elapsed = now.timeIntervalSince(startTime) - pausedDuration
+    return formatTime(elapsed)
+}
+```
+
+#### E. 권장 해결 방안
+
+**Option 1: 홈 스크린 위젯 제거 (Fiti-Run 방식)**
+```swift
+// ZenActivityWidgetBundle.swift 수정
+@main
+struct ZenActivityWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        ZenActivityWidgetLiveActivity()  // Live Activity만 남김
+    }
+}
+```
+- 장점: 구조 단순화, 충돌 제거
+- 단점: 홈 스크린 위젯 기능 상실
+
+**Option 2: 홈 스크린 위젯 비활성화 (임시)**
+```swift
+@main
+struct ZenActivityWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        // ZenActivityWidget()  // 주석 처리
+        // ZenActivityWidgetControl()  // 주석 처리
+        ZenActivityWidgetLiveActivity()
+    }
+}
+```
+- 장점: 나중에 쉽게 복구 가능
+- 단점: 코드는 남아있어 혼란 가능
+
+**Option 3: 완전 재구현 (권장)**
+1. Fiti-Run의 구조를 참고하여 Live Activity만 집중
+2. 별도 데이터 모델 파일 생성
+3. 일시정지 로직 완전 재작성
+4. 홈 스크린 위젯은 나중에 별도 프로젝트로
+
+#### F. 결론
+
+**Zen-Tracker가 복잡한 이유:**
+- 3개의 위젯을 동시에 관리하려다 보니 상태 동기화 문제 발생
+- 홈 스크린 위젯의 Timeline과 Live Activity의 실시간 업데이트가 충돌
+- 초기 템플릿 코드가 그대로 남아있어 불필요한 복잡도 증가
+
+**Fiti-Run이 단순한 이유:**
+- Live Activity 하나만 집중적으로 구현
+- 홈 스크린 위젯 없어서 Timeline Provider 충돌 없음
+- 명확한 단일 목적: 러닝 추적용 Live Activity
+
+**추천: Live Activity만 남기고 재구현하는 것이 가장 깔끔한 해결책**
+
+---
+
+### 3. Live Activity 전용 구조로 재구현 완료 ✅
+
+**작업 일시**: 2025-01-03 12:00
+
+#### A. 구조 변경 내용
+
+**변경 전 (복잡한 구조):**
+```
+ZenActivityWidget/
+├── ZenActivityWidget.swift (홈 스크린 위젯) ❌
+├── ZenActivityWidgetControl.swift (Control 위젯) ❌
+├── ZenActivityWidgetBundle.swift (3개 위젯 번들)
+└── ZenActivityWidgetLiveActivity.swift (Live Activity)
+```
+
+**변경 후 (단순한 구조):**
+```
+ZenActivityWidget/
+├── ZenActivityAttributes.swift (데이터 모델) ✅ NEW
+├── ZenActivityWidgetBundle.swift (Live Activity만)
+├── ZenActivityWidgetLiveActivity.swift (개선된 UI)
+└── backup_20250103/ (백업 폴더)
+```
+
+#### B. 주요 개선사항
+
+1. **별도 데이터 모델 파일 생성** (`ZenActivityAttributes.swift`)
+   - ContentState에 `totalPausedSeconds`, `pauseStartTime` 추가
+   - ActivityType enum 추가 (활동별 이모지, 색상)
+   - 더 명확한 구조화
+
+2. **Widget Bundle 단순화**
+   ```swift
+   @main
+   struct ZenActivityWidgetBundle: WidgetBundle {
+       var body: some Widget {
+           ZenActivityWidgetLiveActivity()  // Live Activity만
+       }
+   }
+   ```
+
+3. **일시정지 UI 개선**
+   - 일시정지 상태일 때 "PAUSED" 배지 표시
+   - 타이머 색상 변경 (흰색 → 회색)
+   - Dynamic Island에도 pause 아이콘 표시
+
+4. **삭제된 파일**
+   - `ZenActivityWidget.swift` (백업: backup_20250103/)
+   - `ZenActivityWidgetControl.swift` (백업: backup_20250103/)
+
+#### C. 다음 단계
+
+1. **Xcode에서 프로젝트 재빌드 필요**
+   - 삭제된 파일 참조 제거
+   - 새 파일 (ZenActivityAttributes.swift) 추가
+   - Clean Build (Cmd+Shift+K) 후 빌드
+
+2. **LiveActivityModule.swift 수정 필요**
+   - 새로운 ContentState 구조에 맞게 업데이트
+   - elapsedSeconds를 직접 전달하는 방식으로 변경
+
+3. **TimerPage.tsx 수정 필요**
+   - 매초마다 elapsedSeconds 계산해서 전송
+   - 일시정지 중에도 계속 업데이트 (값은 고정)
+
+#### D. 예상 효과
+
+- 홈 스크린 위젯과의 충돌 제거
+- 더 단순하고 안정적인 구조
+- 일시정지 동기화 문제 해결 가능성 증가
+- Fiti-Run과 유사한 구조로 검증된 패턴 적용
+
+---
+
+### 4. Target Membership 완전 정리 및 NSRangeException 해결 ✅
+
+**작업 일시**: 2025-01-03 13:00
+
+#### A. Target Membership 최종 설정
+
+| 파일명 | 위치 | ZenApp | ZenActivityWidgetExtension |
+|--------|------|--------|---------------------------|
+| LiveActivityModule.swift | /ios/ZenApp/ | ✅ | ❌ |
+| LiveActivityModule.m | /ios/ZenApp/ | ✅ | ❌ |
+| **ZenActivityAttributes.swift** | /ios/ZenActivityWidget/ | ✅ | ✅ |
+| ZenActivityWidgetBundle.swift | /ios/ZenActivityWidget/ | ❌ | ✅ |
+| ZenActivityWidgetLiveActivity.swift | /ios/ZenActivityWidget/ | ❌ | ✅ |
+
+**핵심**: `ZenActivityAttributes.swift`는 양쪽 타겟 모두에 포함되어야 함!
+
+#### B. NSRangeException 문제 해결
+
+**에러 메시지**:
+```
+NSRangeException: *** -[__NSArrayM objectAtIndexedSubscript:]: index 4 beyond bounds [0 .. 3]
+```
+
+**원인**: JavaScript와 Native Module 간 파라미터 개수 불일치
+
+**해결 방법**: 두 개의 메서드로 분리
+1. `updateActivity`: 기존 호환성 유지 (2개 파라미터)
+2. `updateActivityWithPause`: 일시정지 지원 (3개 파라미터)
+
+```swift
+// LiveActivityModule.swift
+@objc
+func updateActivity(_ activityId: String,
+                   elapsedSeconds: NSNumber,
+                   resolver: RCTPromiseResolveBlock,
+                   rejecter: RCTPromiseRejectBlock)
+
+@objc  
+func updateActivityWithPause(_ activityId: String,
+                            elapsedSeconds: NSNumber,
+                            isPaused: Bool,
+                            resolver: RCTPromiseResolveBlock,
+                            rejecter: RCTPromiseRejectBlock)
+```
+
+#### C. Live Activity 일시정지 동기화 구현
+
+**수정된 파일들**:
+1. `LiveActivityModule.swift`: isPaused 파라미터 처리
+2. `LiveActivityModule.m`: 브릿지 시그니처 업데이트
+3. `LiveActivityService.ts`: 조건부 메서드 호출
+4. `TimerPage.tsx`: 매초마다 상태 업데이트
+
+**동작 흐름**:
+```
+앱 일시정지 → updateActivityWithPause(isPaused: true) → Live Activity "PAUSED" 표시
+앱 재개 → updateActivityWithPause(isPaused: false) → Live Activity 정상 표시
+```
+
+#### D. 중복 파일 정리
+
+- `/ios/ZenActivityAttributes.swift` 삭제 (잘못된 위치)
+- `/ios/LiveActivityModule.*` → `/ios/ZenApp/`로 이동
+- 백업 파일들은 `backup_20250103/` 폴더에 보관
+
+---

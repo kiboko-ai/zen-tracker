@@ -39,25 +39,47 @@ export default function App() {
       // Initialize notification service
       await NotificationService.initialize()
       
-      // 일일 리마인더 설정 (매일 오전 9시)
-      // Schedule daily reminder at 9:00 AM if permission exists
+      // TEST MODE: 30분마다 알림 (테스트용)
+      // Uncomment the following block to enable test notifications every 30 minutes
+      const TEST_MODE = true; // 테스트 모드 활성화/비활성화
+      
       const hasPermission = NotificationService.hasNotificationPermission()
       if (hasPermission) {
-        // 이미 스케줄되어 있는지 확인
-        // Check if daily reminder is already scheduled
-        const isScheduled = await NotificationService.isDailyReminderScheduled()
-        if (!isScheduled) {
-          // 스케줄되어 있지 않으면 새로 설정
-          // Schedule if not already set
-          const reminderId = await NotificationService.scheduleDailyReminder()
-          if (reminderId) {
-            console.log('Daily reminder scheduled at 9:00 AM:', reminderId)
+        if (TEST_MODE) {
+          // 테스트 모드: 30분마다 알림
+          const isTestScheduled = await NotificationService.isTestReminderScheduled()
+          if (!isTestScheduled) {
+            const testId = await NotificationService.scheduleTestReminder()
+            if (testId) {
+              console.log('🔔 TEST MODE: Notification will be sent every 30 minutes')
+              console.log('Test reminder ID:', testId)
+            }
+          } else {
+            console.log('🔔 TEST MODE: Already scheduled (every 30 min)')
           }
         } else {
-          console.log('Daily reminder already scheduled')
+          // 프로덕션 모드: 매일 오전 9시
+          // Cancel any test reminders if switching from test mode
+          await NotificationService.cancelTestReminder()
+          
+          // 일일 리마인더 설정 (매일 오전 9시)
+          // Schedule daily reminder at 9:00 AM if permission exists
+          // 이미 스케줄되어 있는지 확인
+          // Check if daily reminder is already scheduled
+          const isScheduled = await NotificationService.isDailyReminderScheduled()
+          if (!isScheduled) {
+            // 스케줄되어 있지 않으면 새로 설정
+            // Schedule if not already set
+            const reminderId = await NotificationService.scheduleDailyReminder()
+            if (reminderId) {
+              console.log('Daily reminder scheduled at 9:00 AM:', reminderId)
+            }
+          } else {
+            console.log('Daily reminder already scheduled')
+          }
         }
       } else {
-        console.log('No notification permission - skipping daily reminder')
+        console.log('No notification permission - skipping reminders')
       }
       
       // Check if this is first launch

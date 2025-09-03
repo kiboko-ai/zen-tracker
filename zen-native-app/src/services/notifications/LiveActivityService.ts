@@ -89,18 +89,18 @@ class LiveActivityService {
     }
 
     try {
-      // 간단하게: updateActivityWithPause 하나로 통일
-      console.log(`🔄 Updating Live Activity - Paused: ${isPaused}, Elapsed: ${elapsedSeconds}`);
+      console.log(`🔄 Updating Live Activity - ID: ${activityId}, Elapsed: ${elapsedSeconds}s, Paused: ${isPaused}`);
       
-      // updateActivityWithPause를 항상 사용 (isPaused 파라미터로 구분)
-      if (NativeModules.LiveActivityModule?.updateActivityWithPause) {
+      // Check if the new method exists
+      if (NativeModules.LiveActivityModule.updateActivityWithPause) {
+        // Use new method that supports pause state
         await NativeModules.LiveActivityModule.updateActivityWithPause(
           activityId,
           elapsedSeconds,
           isPaused
         );
       } else {
-        // Fallback: 기본 updateActivity 사용
+        // Fallback to original method (no pause support)
         await NativeModules.LiveActivityModule.updateActivity(
           activityId,
           elapsedSeconds

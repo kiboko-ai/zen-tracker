@@ -9,15 +9,8 @@ class LiveActivityModule: NSObject {
   @objc
   func areActivitiesEnabled(_ resolve: @escaping RCTPromiseResolveBlock,
                            rejecter reject: @escaping RCTPromiseRejectBlock) {
-    if #available(iOS 16.2, *) {
-      // Check current status
-      let authInfo = ActivityAuthorizationInfo()
-      print("Live Activities enabled: \(authInfo.areActivitiesEnabled)")
-      print("Frequent pushes enabled: \(authInfo.frequentPushesEnabled)")
-      resolve(authInfo.areActivitiesEnabled)
-    } else if #available(iOS 16.1, *) {
-      // For iOS 16.1
-      resolve(true) // Assume enabled
+    if #available(iOS 16.1, *) {
+      resolve(ActivityAuthorizationInfo().areActivitiesEnabled)
     } else {
       resolve(false)
     }
@@ -38,25 +31,23 @@ class LiveActivityModule: NSObject {
             targetSeconds: targetMinutes.intValue * 60,
             startTime: Date()
           )
-          
+
           // Initial content state
           let initialState = ZenActivityAttributes.ContentState(
             elapsedSeconds: 0,
-            isPaused: false,
-            lastUpdateTime: Date(),
-            pausedDuration: 0
+            isPaused: false
           )
-          
+
           // Start the Live Activity
           let activity = try Activity<ZenActivityAttributes>.request(
             attributes: attributes,
             content: .init(state: initialState, staleDate: nil),
             pushType: nil
           )
-          
+
           print("Live Activity started with ID: \(activity.id)")
           resolve(activity.id)
-          
+
         } catch {
           print("Error starting Live Activity: \(error)")
           reject("ACTIVITY_ERROR", "Failed to start Live Activity: \(error.localizedDescription)", error)
@@ -67,47 +58,17 @@ class LiveActivityModule: NSObject {
     }
   }
   
-  // MARK: - Update Live Activity (original method - for regular updates)
+ // MARK: - Update Live Activity (Original - Keep for compatibility)
   @objc
   func updateActivity(_ activityId: String,
                      elapsedSeconds: NSNumber,
                      resolver resolve: @escaping RCTPromiseResolveBlock,
                      rejecter reject: @escaping RCTPromiseRejectBlock) {
-    if #available(iOS 16.1, *) {
-      Task { @MainActor in
-        // Find all active activities
-        let activities = Activity<ZenActivityAttributes>.activities
-        
-        // Update all activities (in case ID doesn't match exactly)
-        for activity in activities {
-          // 기존 pausedDuration과 isPaused 상태 유지
-          let currentPausedDuration = activity.content.state.pausedDuration
-          let currentIsPaused = activity.content.state.isPaused
-          
-          let updatedState = ZenActivityAttributes.ContentState(
-            elapsedSeconds: elapsedSeconds.intValue,
-            isPaused: currentIsPaused,  // 현재 pause 상태 유지
-            lastUpdateTime: Date(),
-            pausedDuration: currentPausedDuration  // 누적된 pause 시간 유지
-          )
-          
-          let content = ActivityContent(
-            state: updatedState,
-            staleDate: Date().addingTimeInterval(2),  // 2초 후 stale (일시정지 상태 무관)
-            relevanceScore: 100
-          )
-          
-          await activity.update(content)
-        }
-        
-        resolve(true)
-      }
-    } else {
-      reject("UNSUPPORTED", "Live Activities require iOS 16.1+", nil)
-    }
+    // Call the new method with isPaused = false for backward compatibility
+    updateActivityWithPause(activityId, elapsedSeconds: elapsedSeconds, isPaused: false, resolver: resolve, rejecter: reject)
   }
   
-  // MARK: - Update Live Activity with pause state
+  // MARK: - Update Live Activity with Pause State
   @objc
   func updateActivityWithPause(_ activityId: String,
                                elapsedSeconds: NSNumber,
@@ -115,120 +76,38 @@ class LiveActivityModule: NSObject {
                                resolver resolve: @escaping RCTPromiseResolveBlock,
                                rejecter reject: @escaping RCTPromiseRejectBlock) {
     if #available(iOS 16.1, *) {
-      Task { @MainActor in
-        print("🔴 updateActivityWithPause called - isPaused: \(isPaused), elapsed: \(elapsedSeconds)")
-        
-        // Find all active activities
+      Task { @MainActor in  // MainActor 추가
+        // Find the activity by ID
         let activities = Activity<ZenActivityAttributes>.activities
-        print("Found \(activities.count) active activities")
-        
-        // Update all activities (in case ID doesn't match exactly)
-        for activity in activities {
-          var newPausedDuration = activity.content.state.pausedDuration
-          
-          // 일시정지 -> 재개: 일시정지된 시간을 누적
-          if !isPaused && activity.content.state.isPaused {
-              let pauseTime = Date().timeIntervalSince(activity.content.state.lastUpdateTime)
-              newPausedDuration += pauseTime
-              print("Resuming: Adding \(pauseTime) seconds to pausedDuration")
-          }
-          
-          let updatedState = ZenActivityAttributes.ContentState(
-            elapsedSeconds: elapsedSeconds.intValue,
-            isPaused: isPaused,
-            lastUpdateTime: Date(),
-            pausedDuration: newPausedDuration
-          )
-          
-          print("Updating activity - isPaused: \(isPaused), pausedDuration: \(newPausedDuration)")
-          
-          let content = ActivityContent(
-            state: updatedState,
-            staleDate: Date().addingTimeInterval(2),  // 2초 후 stale (항상 업데이트)
-            relevanceScore: 100
-          )
-          
-          await activity.update(content)
-          print("Activity updated successfully with pause state: \(isPaused)")
+
+        // 디버깅용 로그
+        print("🔄 Updating activity: \(activityId)")
+        print("   - Elapsed: \(elapsedSeconds) seconds")
+        print("   - Paused: \(isPaused)")
+        print("   - Active activities: \(activities.count)")
+
+        guard let activity = activities.first(where: { $0.id == activityId }) else {
+          print("❌ Activity not found: \(activityId)")
+          print("   Available IDs: \(activities.map { $0.id })")
+          resolve(false)
+          return
         }
-        
-        resolve(true)
-      }
-    } else {
-      reject("UNSUPPORTED", "Live Activities require iOS 16.1+", nil)
-    }
-  }
-  
-  // MARK: - Pause Live Activity
-  @objc
-  func pauseActivity(_ activityId: String,
-                     elapsedSeconds: NSNumber,
-                     resolver resolve: @escaping RCTPromiseResolveBlock,
-                     rejecter reject: @escaping RCTPromiseRejectBlock) {
-    if #available(iOS 16.1, *) {
-      Task { @MainActor in
-        print("⏸️ pauseActivity called with elapsed: \(elapsedSeconds)")
-        
-        let activities = Activity<ZenActivityAttributes>.activities
-        for activity in activities {
-          // 일시정지 시작 - pausedDuration은 변경 안함
-          let updatedState = ZenActivityAttributes.ContentState(
-            elapsedSeconds: elapsedSeconds.intValue,
-            isPaused: true,
-            lastUpdateTime: Date(),
-            pausedDuration: activity.content.state.pausedDuration
+
+        // Update content state with pause status
+        let updatedState = ZenActivityAttributes.ContentState(
+          elapsedSeconds: elapsedSeconds.intValue,
+          isPaused: isPaused
+        )
+
+        do {
+          await activity.update(
+            ActivityContent(state: updatedState, staleDate: Date().addingTimeInterval(60))
           )
-          
-          let content = ActivityContent(
-            state: updatedState,
-            staleDate: nil,  // No stale date when paused
-            relevanceScore: 100
-          )
-          
-          await activity.update(content)
-          print("⏸️ Activity paused successfully")
+          print("✅ Updated: \(elapsedSeconds)s, paused: \(isPaused)")
+        } catch {
+          print("❌ Failed to update: \(error)")
         }
-        
-        resolve(true)
-      }
-    } else {
-      reject("UNSUPPORTED", "Live Activities require iOS 16.1+", nil)
-    }
-  }
-  
-  // MARK: - Resume Live Activity
-  @objc
-  func resumeActivity(_ activityId: String,
-                      elapsedSeconds: NSNumber,
-                      resolver resolve: @escaping RCTPromiseResolveBlock,
-                      rejecter reject: @escaping RCTPromiseRejectBlock) {
-    if #available(iOS 16.1, *) {
-      Task { @MainActor in
-        print("▶️ resumeActivity called with elapsed: \(elapsedSeconds)")
-        
-        let activities = Activity<ZenActivityAttributes>.activities
-        for activity in activities {
-          // 재개 시 - 일시정지 시간 누적
-          let pausedTime = Date().timeIntervalSince(activity.content.state.lastUpdateTime)
-          let newPausedDuration = activity.content.state.pausedDuration + pausedTime
-          
-          let updatedState = ZenActivityAttributes.ContentState(
-            elapsedSeconds: elapsedSeconds.intValue,
-            isPaused: false,
-            lastUpdateTime: Date(),
-            pausedDuration: newPausedDuration
-          )
-          
-          let content = ActivityContent(
-            state: updatedState,
-            staleDate: Date().addingTimeInterval(60),
-            relevanceScore: 100
-          )
-          
-          await activity.update(content)
-          print("▶️ Activity resumed successfully")
-        }
-        
+
         resolve(true)
       }
     } else {
@@ -250,7 +129,7 @@ class LiveActivityModule: NSObject {
           resolve(false)
           return
         }
-        
+
         // End the activity
         await activity.end(nil, dismissalPolicy: .immediate)
         print("Live Activity ended: \(activityId)")
