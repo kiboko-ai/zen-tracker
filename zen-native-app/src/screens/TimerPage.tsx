@@ -52,6 +52,7 @@ export default function TimerPage() {
     isDailyReminderScheduled,      // 일일 리마인더 상태 확인 함수 추가
     cancelNotification,
     cancelAllNotifications,
+    scheduleNotificationWithDelay,
     startLiveActivity
   } = useNotifications()
   
@@ -86,7 +87,10 @@ export default function TimerPage() {
       // Use BackgroundTimer for accurate time tracking
       const id = BackgroundTimer.setBackgroundInterval(() => {
         if (startTimeRef.current) {
-          const elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+          // When paused, use the frozen elapsed time, otherwise calculate current
+          const elapsed = isPaused 
+            ? seconds  // Use the frozen time when paused
+            : BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
           
           // Only update seconds when not paused
           if (!isPaused) {
@@ -218,10 +222,11 @@ export default function TimerPage() {
     }
     
     // Start Live Activity (iOS 16.1+, no permission needed)
-    if (activity && targetSeconds > 0) {
+    if (activity) {
       console.log('🟢 Starting Live Activity...')
-      const activityId = await startLiveActivity(activity.name, Math.floor(targetSeconds / 60))
-      console.log('🟢 Live Activity ID received:', activityId)
+      const targetMinutes = targetSeconds > 0 ? Math.floor(targetSeconds / 60) : 0  // 0 for infinity mode
+      const activityId = await startLiveActivity(activity.name, targetMinutes)
+      console.log(`🟢 Live Activity started - Mode: ${targetSeconds > 0 ? `${targetMinutes}min` : 'Infinity'}, ID: ${activityId}`)
       setLiveActivityId(activityId)
     }
   }
@@ -231,6 +236,35 @@ export default function TimerPage() {
     pauseSession()
     pauseStartRef.current = new Date()
     setIsPaused(true)
+    
+    // Cancel all scheduled notifications when pausing
+    console.log('⏸️ Cancelling notifications on pause')
+    
+    // Cancel smart check-in notifications
+    if (checkInNotificationIds.length > 0) {
+      for (const id of checkInNotificationIds) {
+        await cancelNotification(id)
+      }
+      // Don't clear the array, we'll need to know which ones to reschedule
+    }
+    
+    // Cancel hourly notification
+    if (hourlyNotificationId) {
+      await cancelNotification(hourlyNotificationId)
+      // Don't clear, will reschedule on resume
+    }
+    
+    // Cancel goal notification if not yet achieved
+    if (goalNotificationId && !hasNotifiedGoal) {
+      await cancelNotification(goalNotificationId)
+      // Don't clear, will reschedule on resume
+    }
+    
+    // Cancel double target notification if not yet achieved
+    if (doubleTargetNotificationId && !hasNotifiedDouble) {
+      await cancelNotification(doubleTargetNotificationId)
+      // Don't clear, will reschedule on resume
+    }
     
     // Send pause state to Live Activity
     if (liveActivityId && startTimeRef.current) {
@@ -249,6 +283,78 @@ export default function TimerPage() {
       pauseStartRef.current = null
     }
     setIsPaused(false)
+    
+    // Reschedule notifications based on remaining time
+    console.log('▶️ Rescheduling notifications on resume')
+    const currentElapsed = seconds // Current elapsed seconds
+    
+    if (activity) {
+      // Reschedule goal notification if not yet achieved
+      if (goalNotificationId && !hasNotifiedGoal && targetSeconds > 0) {
+        const remainingSeconds = targetSeconds - currentElapsed
+        if (remainingSeconds > 0) {
+          const newGoalId = await scheduleNotificationWithDelay(
+            'Zen Tracker',
+            `Great job! You've reached your ${Math.floor(targetSeconds / 60)} minute goal for ${activity.name}! 🎯`,
+            remainingSeconds,
+            { type: 'goal_achieved', activityName: activity.name }
+          )
+          setGoalNotificationId(newGoalId)
+        }
+      }
+      
+      // Reschedule double target notification if not yet achieved
+      if (doubleTargetNotificationId && !hasNotifiedDouble && targetSeconds > 0) {
+        const doubleTarget = targetSeconds * 2
+        const remainingToDouble = doubleTarget - currentElapsed
+        if (remainingToDouble > 0) {
+          const newDoubleId = await scheduleNotificationWithDelay(
+            'Zen Tracker',
+            `Amazing! You've doubled your goal for ${activity.name}! 🌟`,
+            remainingToDouble,
+            { type: 'double_target', activityName: activity.name }
+          )
+          setDoubleTargetNotificationId(newDoubleId)
+        }
+      }
+      
+      // Reschedule smart check-in notifications
+      if (checkInNotificationIds.length > 0 && targetSeconds > 0) {
+        const checkInTimes = [
+          Math.floor(targetSeconds * 0.25), // 25%
+          Math.floor(targetSeconds * 0.5),  // 50%
+          Math.floor(targetSeconds * 0.75), // 75%
+        ]
+        
+        const newCheckInIds: string[] = []
+        for (const checkInTime of checkInTimes) {
+          if (checkInTime > currentElapsed) {
+            const remainingToCheckIn = checkInTime - currentElapsed
+            const id = await scheduleNotificationWithDelay(
+              'Zen Tracker',
+              `Check-in: ${Math.floor((checkInTime / targetSeconds) * 100)}% of your ${activity.name} goal`,
+              remainingToCheckIn,
+              { type: 'smart_checkin', activityName: activity.name }
+            )
+            if (id) newCheckInIds.push(id)
+          }
+        }
+        setCheckInNotificationIds(newCheckInIds)
+      }
+      
+      // Reschedule hourly notification for infinity mode
+      if (hourlyNotificationId && targetSeconds === 0) {
+        const nextHour = Math.ceil(currentElapsed / 3600) * 3600
+        const remainingToNextHour = nextHour - currentElapsed
+        const newHourlyId = await scheduleNotificationWithDelay(
+          'Zen Tracker',
+          `You've been focusing on ${activity.name} for ${Math.ceil(currentElapsed / 3600)} hour(s).`,
+          remainingToNextHour,
+          { type: 'hourly_check', activityName: activity.name }
+        )
+        setHourlyNotificationId(newHourlyId)
+      }
+    }
     
     // Send resume state to Live Activity
     if (liveActivityId && startTimeRef.current) {

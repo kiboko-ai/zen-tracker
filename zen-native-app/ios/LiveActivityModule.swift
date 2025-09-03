@@ -35,7 +35,9 @@ class LiveActivityModule: NSObject {
           // Initial content state
           let initialState = ZenActivityAttributes.ContentState(
             elapsedSeconds: 0,
-            isPaused: false
+            isPaused: false,
+            lastUpdateTime: Date(),
+            pausedDuration: 0
           )
 
           // Start the Live Activity
@@ -58,41 +60,70 @@ class LiveActivityModule: NSObject {
     }
   }
   
- // MARK: - Update Live Activity
+ // MARK: - Update Live Activity (Original - Keep for compatibility)
   @objc
   func updateActivity(_ activityId: String,
                      elapsedSeconds: NSNumber,
                      resolver resolve: @escaping RCTPromiseResolveBlock,
                      rejecter reject: @escaping RCTPromiseRejectBlock) {
+    // Call the new method with isPaused = false for backward compatibility
+    updateActivityWithPause(activityId, elapsedSeconds: elapsedSeconds, isPaused: false, resolver: resolve, rejecter: reject)
+  }
+  
+  // MARK: - Update Live Activity with Pause State
+  @objc
+  func updateActivityWithPause(_ activityId: String,
+                               elapsedSeconds: NSNumber,
+                               isPaused: Bool,
+                               resolver resolve: @escaping RCTPromiseResolveBlock,
+                               rejecter reject: @escaping RCTPromiseRejectBlock) {
     if #available(iOS 16.1, *) {
       Task { @MainActor in  // MainActor 추가
         // Find the activity by ID
         let activities = Activity<ZenActivityAttributes>.activities
 
         // 디버깅용 로그
-        print("Updating activity: \(activityId) with \(elapsedSeconds) seconds")
-        print("Active activities count: \(activities.count)")
+        print("🔄 Updating activity: \(activityId)")
+        print("   - Elapsed: \(elapsedSeconds) seconds")
+        print("   - Paused: \(isPaused)")
+        print("   - Active activities: \(activities.count)")
 
         guard let activity = activities.first(where: { $0.id == activityId }) else {
-          print("Activity not found: \(activityId)")
-          print("Available IDs: \(activities.map { $0.id })")
+          print("❌ Activity not found: \(activityId)")
+          print("   Available IDs: \(activities.map { $0.id })")
           resolve(false)
           return
         }
 
-        // Update content state
+        // Calculate accumulated pause duration
+        let currentPausedDuration: TimeInterval
+        if isPaused && !activity.content.state.isPaused {
+          // Just paused: keep existing duration
+          currentPausedDuration = activity.content.state.pausedDuration
+        } else if !isPaused && activity.content.state.isPaused {
+          // Just resumed: add pause time to accumulated duration
+          let pauseTime = Date().timeIntervalSince(activity.content.state.lastUpdateTime)
+          currentPausedDuration = activity.content.state.pausedDuration + pauseTime
+        } else {
+          // No state change: keep existing duration
+          currentPausedDuration = activity.content.state.pausedDuration
+        }
+        
+        // Update content state with pause status and real-time sync data
         let updatedState = ZenActivityAttributes.ContentState(
           elapsedSeconds: elapsedSeconds.intValue,
-          isPaused: false
+          isPaused: isPaused,
+          lastUpdateTime: Date(),
+          pausedDuration: currentPausedDuration
         )
 
         do {
           await activity.update(
             ActivityContent(state: updatedState, staleDate: Date().addingTimeInterval(60))
           )
-          print("Successfully updated activity with \(elapsedSeconds) seconds")
+          print("✅ Updated: \(elapsedSeconds)s, paused: \(isPaused)")
         } catch {
-          print("Failed to update activity: \(error)")
+          print("❌ Failed to update: \(error)")
         }
 
         resolve(true)

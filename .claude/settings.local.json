@@ -34,7 +34,23 @@
       "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/src/screens/**)",
       "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/src/**)",
       "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/src/screens/**)",
-      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/src/screens/**)"
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/src/screens/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/src/services/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunNative/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/**)",
+      "Read(/Users/michael/Documents/GitHub/michael-fiti-run/fiti-run-native/ios/FitiRunWidget/**)"
     ],
     "deny": []
   }

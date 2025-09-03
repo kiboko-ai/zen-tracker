@@ -1,5 +1,167 @@
 # Zen Tracker App 분석 문서
 
+## 📅 2025년 1월 3일 작업 내용
+
+### 🎯 Live Activity 실시간 동기화 문제 해결
+FitiRun 프로젝트의 Live Activity 구현을 참고하여 실시간 동기화 문제 완전 해결
+
+#### 1. **Live Activity 실시간 타이머 구현**
+- **문제**: Pause 상태는 동기화되지만 타이머가 실시간으로 업데이트되지 않음
+- **원인**: Timer.publish와 computed property는 Live Activity에서 작동하지 않음
+- **해결**: `Text(Date, style: .timer)` 사용
+  ```swift
+  // 일시정지 시: 정적 시간 표시
+  if context.state.isPaused {
+      Text(formatTime(seconds: context.state.elapsedSeconds))
+  } else {
+      // 실행 중: 실시간 타이머
+      let adjustedStart = context.attributes.startTime.addingTimeInterval(context.state.pausedDuration)
+      Text(adjustedStart, style: .timer)
+  }
+  ```
+
+#### 2. **Pause/Resume 동기화**
+- **pausedDuration 계산 로직 수정** (LiveActivityModule.swift)
+  - Pause 시: `totalElapsed - currentSeconds`로 계산
+  - Resume 시: 기존 pausedDuration 유지
+- **TimerPage.tsx 수정**
+  - Pause 중에는 frozen elapsed time 사용
+  - Resume 시 정확한 시점부터 재개
+
+#### 3. **Push Notification 일시정지 동기화**
+- **문제**: 일시정지해도 Push Notification이 예약된 시간에 도착
+- **해결**: 
+  - Pause 시: 모든 예약된 알림 취소
+  - Resume 시: 남은 시간 기준으로 재예약
+  - 새로운 헬퍼 함수: `scheduleNotificationWithDelay()`
+
+#### 4. **Infinity 모드 Live Activity 수정**
+- **문제**: targetSeconds가 0일 때 Live Activity가 시작되지 않음
+- **원인**: `if (activity && targetSeconds > 0)` 조건
+- **해결**: 조건 제거, infinity 모드도 Live Activity 지원
+
+### 📝 수정된 파일 목록
+
+#### iOS Native (Swift/Objective-C)
+1. **ios/ZenApp/LiveActivityModule.swift**
+   - pausedDuration 계산 로직 개선
+   - 상태 변경 감지 로그 추가
+
+2. **ios/ZenActivityWidget/ZenActivityWidgetLiveActivity.swift**
+   - Text(Date, style: .timer) 구현
+   - Dynamic Island, Compact, Lock Screen 뷰 수정
+   - 불필요한 Timer.publish 제거
+
+3. **ios/ZenActivityWidget/ZenActivityAttributes.swift**
+   - lastUpdateTime, pausedDuration 필드 유지
+
+4. **중복 파일 정리**
+   - ios/LiveActivityModule.* 파일들 제거 (중복)
+   - ios/ZenApp/ 폴더의 파일만 사용
+
+#### JavaScript/TypeScript
+1. **src/screens/TimerPage.tsx**
+   - handlePause: 알림 취소 로직 추가
+   - handleResume: 알림 재예약 로직 추가
+   - Infinity 모드 Live Activity 조건 수정
+   - Pause 시 elapsed time freeze 처리
+
+2. **src/services/notifications/NotificationService.ts**
+   - scheduleNotificationWithDelay() 메서드 추가
+
+3. **src/hooks/useNotifications.ts**
+   - scheduleNotificationWithDelay export 추가
+
+### 🎨 Live Activity 디자인 수정 가이드
+
+#### 잠금화면 Live Activity 디자인을 수정하려면:
+
+**📍 메인 파일: `/ios/ZenActivityWidget/ZenActivityWidgetLiveActivity.swift`**
+
+```swift
+// 주요 컴포넌트 구조:
+1. LockScreenLiveActivityView (Line 81-148)
+   - 잠금화면에 표시되는 메인 뷰
+   - Header: 타이머 아이콘, 활동명, PAUSED 상태
+   - Timer Display: 큰 시간 표시 (42pt)
+   - Progress Bar: 목표 진행률
+   - Infinity Mode: "No target set" 표시
+
+2. DynamicIslandExpandedRegion (Line 23-58)
+   - Dynamic Island 확장 뷰
+   - Leading: 활동명
+   - Trailing: 시간
+   - Center: PAUSED 상태
+   - Bottom: 진행률 바
+
+3. Compact Mode (Line 59-73)
+   - Dynamic Island 축소 뷰
+   - Leading: 아이콘
+   - Trailing: 시간 (간략)
+```
+
+**🎨 디자인 요소 수정 위치:**
+- **색상**: `.foregroundColor()`, `.tint()` 
+  - 현재: orange (#FFA500)
+  - Gray for paused state
+- **폰트**: `.font()` 
+  - Timer: `.system(size: 42, weight: .bold, design: .monospaced)`
+  - Headers: `.headline`, `.caption`
+- **아이콘**: `Image(systemName:)`
+  - timer, pause.circle.fill, infinity
+- **레이아웃**: `VStack`, `HStack`, `spacing`
+- **배경**: `.activityBackgroundTint()`
+
+**💡 수정 예시:**
+```swift
+// 색상 변경
+.foregroundColor(.orange) → .foregroundColor(.blue)
+
+// 폰트 크기 변경  
+.font(.system(size: 42, ...)) → .font(.system(size: 48, ...))
+
+// 아이콘 변경
+Image(systemName: "timer") → Image(systemName: "clock.fill")
+
+// 배경색 변경
+.activityBackgroundTint(Color.black.opacity(0.5)) 
+→ .activityBackgroundTint(Color.purple.opacity(0.3))
+```
+
+### 📅 추가 작업 내용 (2025년 1월 3일 오후)
+
+#### 5. **Push Notification 일시정지/재개 동기화**
+- **구현 방식**: 
+  - Pause 시: 모든 예약된 알림 취소
+  - Resume 시: 남은 시간 기준으로 재예약
+- **새로운 함수**: `scheduleNotificationWithDelay()`
+- **영향받는 알림**: Goal, 2x Target, Check-in, Hourly
+
+#### 6. **Infinity 모드 Live Activity 지원**
+- **문제**: `targetSeconds > 0` 조건으로 infinity 모드에서 Live Activity 미작동
+- **해결**: 조건 제거, targetMinutes = 0 전달
+- **결과**: Infinity 모드에서도 Live Activity 표시
+
+#### 7. **Live Activity 아이콘 변경**
+- **PNG 이미지 시도**: Widget Extension 번들 설정 복잡으로 실패
+- **최종 선택**: SF Symbol `timer.circle.fill` 사용
+- **Dynamic Island**: 일시정지 시 `pause.circle.fill` 표시
+
+#### 8. **Progress Bar 실시간 업데이트 분석**
+- **제한사항**: Live Activity에서 ProgressView는 정적 (실시간 업데이트 불가)
+- **실시간 가능**: `Text(Date, style: .timer)`만 자동 업데이트
+- **현재 방식**: 1초마다 앱에서 업데이트 전송
+
+### ✅ 현재 상태
+- Live Activity 실시간 동기화 ✅
+- Pause/Resume 완벽 동작 ✅
+- Push Notification 일시정지 동기화 ✅
+- Infinity 모드 지원 ✅
+- 모든 파일 정리 및 중복 제거 ✅
+- SF Symbol 아이콘 적용 ✅
+
+# Zen Tracker App 분석 문서
+
 ## 앱 개요
 Zen Tracker는 사용자가 다양한 활동(읽기, 명상, 쓰기, 운동 등)에 집중한 시간을 추적하는 React Native 앱입니다. 사용자는 활동을 선택하고, 타이머를 시작하여 집중 시간을 기록하며, 일/주/월/년 단위로 통계를 확인할 수 있습니다.
 

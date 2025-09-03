@@ -35,7 +35,9 @@ class LiveActivityModule: NSObject {
           // Initial content state
           let initialState = ZenActivityAttributes.ContentState(
             elapsedSeconds: 0,
-            isPaused: false
+            isPaused: false,
+            lastUpdateTime: Date(),
+            pausedDuration: 0
           )
 
           // Start the Live Activity
@@ -93,10 +95,37 @@ class LiveActivityModule: NSObject {
           return
         }
 
-        // Update content state with pause status
+        // Get previous pause state
+        let wasPaused = activity.content.state.isPaused
+        print("🔍 State Check - Was: \(wasPaused), Now: \(isPaused)")
+        
+        // Calculate accumulated pause duration
+        let currentPausedDuration: TimeInterval
+        if isPaused && !wasPaused {
+          // Just paused: Calculate how much time has elapsed since start minus previous pauses
+          // This becomes the new baseline when timer resumes
+          let totalElapsed = Date().timeIntervalSince(activity.attributes.startTime)
+          currentPausedDuration = totalElapsed - Double(elapsedSeconds.intValue)
+          print("⏸️ PAUSING - Total elapsed: \(totalElapsed)s, Current seconds: \(elapsedSeconds)s, Pause duration: \(currentPausedDuration)s")
+        } else if !isPaused && wasPaused {
+          // Just resumed: keep the pause duration same (it was already calculated when paused)
+          currentPausedDuration = activity.content.state.pausedDuration
+          print("▶️ RESUMING - Keeping pause duration: \(currentPausedDuration)s")
+        } else if isPaused {
+          // Still paused: maintain the pause duration
+          currentPausedDuration = activity.content.state.pausedDuration
+          print("⏸️ STILL PAUSED - Keeping pause duration: \(currentPausedDuration)s")
+        } else {
+          // Still running: keep existing duration
+          currentPausedDuration = activity.content.state.pausedDuration
+        }
+        
+        // Update content state with pause status and real-time sync data
         let updatedState = ZenActivityAttributes.ContentState(
           elapsedSeconds: elapsedSeconds.intValue,
-          isPaused: isPaused
+          isPaused: isPaused,
+          lastUpdateTime: Date(),
+          pausedDuration: currentPausedDuration
         )
 
         do {

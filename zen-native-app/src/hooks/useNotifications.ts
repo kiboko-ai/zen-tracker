@@ -193,6 +193,17 @@ export const useNotifications = (): UseNotificationsReturn => {
     await NotificationService.cancelAllNotifications();
   }, []);
 
+  const scheduleNotificationWithDelay = useCallback(
+    async (title: string, body: string, delaySeconds: number, data?: any): Promise<string | null> => {
+      if (!hasPermission) {
+        console.log('No notification permission for rescheduling');
+        return null;
+      }
+      return await NotificationService.scheduleNotificationWithDelay(title, body, delaySeconds, data);
+    },
+    [hasPermission]
+  );
+
   const startLiveActivity = useCallback(
     async (activityName: string, targetMinutes: number): Promise<string | null> => {
       // Try Live Activity first (no permission needed)
@@ -224,6 +235,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     isDailyReminderScheduled,     // 일일 리마인더 상태 확인
     cancelNotification,
     cancelAllNotifications,
+    scheduleNotificationWithDelay,
     startLiveActivity,
   };
 };

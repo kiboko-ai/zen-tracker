@@ -12,9 +12,16 @@ RCT_EXTERN_METHOD(startActivity:(NSString *)activityName
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-// Update an existing Live Activity
+// Update an existing Live Activity (Original - for compatibility)
 RCT_EXTERN_METHOD(updateActivity:(NSString *)activityId
                   elapsedSeconds:(nonnull NSNumber *)elapsedSeconds
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+// Update an existing Live Activity with Pause State
+RCT_EXTERN_METHOD(updateActivityWithPause:(NSString *)activityId
+                  elapsedSeconds:(nonnull NSNumber *)elapsedSeconds
+                  isPaused:(BOOL)isPaused
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 

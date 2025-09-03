@@ -15,8 +15,8 @@
 		4C2474442E66E3F3005F6C0F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2474432E66E3F3005F6C0F /* WidgetKit.framework */; };
 		4C2474462E66E3F3005F6C0F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2474452E66E3F3005F6C0F /* SwiftUI.framework */; };
 		4C2474552E66E3F6005F6C0F /* ZenActivityWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4C2474422E66E3F3005F6C0F /* ZenActivityWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		4C2474912E67FC43005F6C0F /* LiveActivityModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C24748F2E67FC43005F6C0F /* LiveActivityModule.m */; };
-		4C2474922E67FC43005F6C0F /* LiveActivityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2474902E67FC43005F6C0F /* LiveActivityModule.swift */; };
+		4C2474962E68099D005F6C0F /* LiveActivityModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C2474942E68099D005F6C0F /* LiveActivityModule.m */; };
+		4C2474972E68099D005F6C0F /* LiveActivityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2474952E68099D005F6C0F /* LiveActivityModule.swift */; };
 		68874480F3C6AE18E6FA7188 /* Pods_ZenApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E205FE1D1D88D98646CDAB96 /* Pods_ZenApp.framework */; };
 		9D69432841804095B5870160 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E430EF2D0940EF80459E12 /* noop-file.swift */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
@@ -57,8 +57,8 @@
 		4C2474422E66E3F3005F6C0F /* ZenActivityWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZenActivityWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2474432E66E3F3005F6C0F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		4C2474452E66E3F3005F6C0F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		4C24748F2E67FC43005F6C0F /* LiveActivityModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LiveActivityModule.m; sourceTree = "<group>"; };
-		4C2474902E67FC43005F6C0F /* LiveActivityModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityModule.swift; sourceTree = "<group>"; };
+		4C2474942E68099D005F6C0F /* LiveActivityModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LiveActivityModule.m; sourceTree = "<group>"; };
+		4C2474952E68099D005F6C0F /* LiveActivityModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityModule.swift; sourceTree = "<group>"; };
 		69E430EF2D0940EF80459E12 /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "ZenApp/noop-file.swift"; sourceTree = "<group>"; };
 		756E5FB1C70A29348B9B4401 /* Pods-ZenApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZenApp.release.xcconfig"; path = "Target Support Files/Pods-ZenApp/Pods-ZenApp.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = ZenApp/SplashScreen.storyboard; sourceTree = "<group>"; };
@@ -117,8 +117,8 @@
 		13B07FAE1A68108700A75B9A /* ZenApp */ = {
 			isa = PBXGroup;
 			children = (
-				4C24748F2E67FC43005F6C0F /* LiveActivityModule.m */,
-				4C2474902E67FC43005F6C0F /* LiveActivityModule.swift */,
+				4C2474942E68099D005F6C0F /* LiveActivityModule.m */,
+				4C2474952E68099D005F6C0F /* LiveActivityModule.swift */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.mm */,
@@ -433,8 +433,8 @@
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
-				4C2474912E67FC43005F6C0F /* LiveActivityModule.m in Sources */,
-				4C2474922E67FC43005F6C0F /* LiveActivityModule.swift in Sources */,
+				4C2474962E68099D005F6C0F /* LiveActivityModule.m in Sources */,
+				4C2474972E68099D005F6C0F /* LiveActivityModule.swift in Sources */,
 				9D69432841804095B5870160 /* noop-file.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

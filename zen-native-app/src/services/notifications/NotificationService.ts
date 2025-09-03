@@ -561,6 +561,47 @@ class NotificationService {
   }
 
   /**
+   * Schedule a notification with a specific delay in seconds
+   * Used for rescheduling notifications after resume
+   * @param title Notification title
+   * @param body Notification body
+   * @param delaySeconds Delay in seconds before notification
+   * @param data Optional data payload
+   * @returns Notification ID or null if no permission
+   */
+  async scheduleNotificationWithDelay(
+    title: string,
+    body: string,
+    delaySeconds: number,
+    data?: any
+  ): Promise<string | null> {
+    if (!this.hasPermission) {
+      console.log('No notification permission');
+      return null;
+    }
+
+    try {
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          sound: true,
+          data: data || {},
+        },
+        trigger: {
+          seconds: delaySeconds,
+        },
+      });
+
+      console.log(`Scheduled notification in ${delaySeconds}s: ${body}`);
+      return notificationId;
+    } catch (error) {
+      console.error('Failed to schedule notification:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get all scheduled notifications (for debugging)
    */
   async getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
