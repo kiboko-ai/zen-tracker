@@ -283,7 +283,7 @@ export default function ReportPage() {
           const showImportModeOptions = () => {
             Alert.alert(
               'Import Data',
-              'How would you like to import the data?',
+              'How would you like to import the data?\n\n• Replace All: Delete current data & replace with imported\n• Merge: Combine with existing data\n• Add as New: Keep all data separate',
               [
                 { text: 'Cancel', style: 'cancel' },
                 {
