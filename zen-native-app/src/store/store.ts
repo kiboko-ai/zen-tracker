@@ -176,44 +176,111 @@ export const useStore = create<AppState>()(
             break
             
           case 'merge':
-            // Merge with existing data, avoiding duplicates
-            const existingActivityIds = new Set(currentState.activities.map(a => a.id))
+            // Merge with existing data, combining statistics for same activity names
+            const existingActivityMap = new Map(currentState.activities.map(a => [a.name.toLowerCase(), a]))
             const existingSessionIds = new Set(currentState.sessions.map(s => s.id))
             
-            const newActivities = data.activities.filter(a => !existingActivityIds.has(a.id))
-            const newSessions = data.sessions.filter(s => !existingSessionIds.has(s.id))
+            // Process imported activities
+            const mergedActivities = [...currentState.activities]
+            const activityIdMapping = new Map<string, string>() // oldId -> newId
+            
+            data.activities.forEach(importedActivity => {
+              const existingActivity = existingActivityMap.get(importedActivity.name.toLowerCase())
+              
+              if (existingActivity) {
+                // Map the imported activity ID to existing activity ID
+                activityIdMapping.set(importedActivity.id, existingActivity.id)
+              } else {
+                // Add new activity
+                mergedActivities.push(importedActivity)
+                existingActivityMap.set(importedActivity.name.toLowerCase(), importedActivity)
+                activityIdMapping.set(importedActivity.id, importedActivity.id)
+              }
+            })
+            
+            // Process sessions with updated activity IDs
+            const newSessions = data.sessions
+              .filter(s => !existingSessionIds.has(s.id))
+              .map(session => ({
+                ...session,
+                activityId: activityIdMapping.get(session.activityId) || session.activityId
+              }))
+            
+            const allSessions = [...currentState.sessions, ...newSessions]
+            
+            // Recalculate totalTime for all activities based on actual sessions
+            const updatedActivities = mergedActivities.map(activity => {
+              const activitySessions = allSessions.filter(s => s.activityId === activity.id)
+              const calculatedTotalTime = activitySessions.reduce((sum, session) => sum + session.duration, 0)
+              const latestSession = activitySessions.reduce((latest, session) => 
+                new Date(session.startTime) > new Date(latest?.startTime || 0) ? session : latest, null)
+              
+              return {
+                ...activity,
+                totalTime: calculatedTotalTime,
+                lastUsed: latestSession ? new Date(latestSession.startTime) : activity.lastUsed
+              }
+            })
             
             set({
-              activities: [...currentState.activities, ...newActivities],
-              sessions: [...currentState.sessions, ...newSessions],
+              activities: updatedActivities,
+              sessions: allSessions,
               isFirstTime: false,
               selectedActivities: [...new Set([...currentState.selectedActivities, ...(data.selectedActivities ?? [])])]
             })
             break
             
           case 'append':
-            // Add all as new entries with new IDs
+            // Add all entries, combining statistics for duplicate names
             const timestamp = Date.now()
-            const appendedActivities = data.activities.map((a, index) => ({
-              ...a,
-              id: `${a.id}-imported-${timestamp}-${index}`
-            }))
+            const currentActivityMap = new Map(currentState.activities.map(a => [a.name.toLowerCase(), a]))
             
-            // Create ID mapping for sessions
-            const activityIdMap = new Map<string, string>()
-            data.activities.forEach((a, i) => {
-              activityIdMap.set(a.id, appendedActivities[i].id)
+            const appendActivities = [...currentState.activities]
+            const appendActivityIdMapping = new Map<string, string>()
+            
+            data.activities.forEach((importedActivity, index) => {
+              const existingActivity = currentActivityMap.get(importedActivity.name.toLowerCase())
+              
+              if (existingActivity) {
+                // Map to existing activity
+                appendActivityIdMapping.set(importedActivity.id, existingActivity.id)
+              } else {
+                // Add as new activity with new ID
+                const newActivity = {
+                  ...importedActivity,
+                  id: `${importedActivity.id}-imported-${timestamp}-${index}`
+                }
+                appendActivities.push(newActivity)
+                currentActivityMap.set(importedActivity.name.toLowerCase(), newActivity)
+                appendActivityIdMapping.set(importedActivity.id, newActivity.id)
+              }
             })
             
             const appendedSessions = data.sessions.map((s, index) => ({
               ...s,
               id: `${s.id}-imported-${timestamp}-${index}`,
-              activityId: activityIdMap.get(s.activityId) || s.activityId
+              activityId: appendActivityIdMapping.get(s.activityId) || s.activityId
             }))
             
+            const allAppendSessions = [...currentState.sessions, ...appendedSessions]
+            
+            // Recalculate totalTime for all activities based on actual sessions
+            const finalAppendActivities = appendActivities.map(activity => {
+              const activitySessions = allAppendSessions.filter(s => s.activityId === activity.id)
+              const calculatedTotalTime = activitySessions.reduce((sum, session) => sum + session.duration, 0)
+              const latestSession = activitySessions.reduce((latest, session) => 
+                new Date(session.startTime) > new Date(latest?.startTime || 0) ? session : latest, null)
+              
+              return {
+                ...activity,
+                totalTime: calculatedTotalTime,
+                lastUsed: latestSession ? new Date(latestSession.startTime) : activity.lastUsed
+              }
+            })
+            
             set({
-              activities: [...currentState.activities, ...appendedActivities],
-              sessions: [...currentState.sessions, ...appendedSessions],
+              activities: finalAppendActivities,
+              sessions: allAppendSessions,
               isFirstTime: false
             })
             break
