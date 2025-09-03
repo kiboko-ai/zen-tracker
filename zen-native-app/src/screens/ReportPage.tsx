@@ -142,91 +142,49 @@ export default function ReportPage() {
   const handleExport = async () => {
     if (isExporting) return
     
-    const showExportOptions = () => {
-      if (Platform.OS === 'ios') {
-        ActionSheetIOS.showActionSheetWithOptions(
-          {
-            options: ['Cancel', 'Export as JSON', 'Export as CSV'],
-            cancelButtonIndex: 0,
-            title: 'Choose Export Format',
-          },
-          async (buttonIndex) => {
-            if (buttonIndex === 1) {
-              await exportData('json')
-            } else if (buttonIndex === 2) {
-              await exportData('csv')
-            }
-          }
-        )
-      } else {
-        Alert.alert(
-          'Choose Export Format',
-          '',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Export as JSON', onPress: () => exportData('json') },
-            { text: 'Export as CSV', onPress: () => exportData('csv') },
-          ],
-          { cancelable: true }
-        )
-      }
-    }
-
-    const exportData = async (format: 'json' | 'csv') => {
-      try {
-        setIsExporting(true)
+    try {
+      setIsExporting(true)
+      
+      const exportData = ExportService.prepareExportData(
+        activities,
+        sessions,
+        currentSession,
+        isFirstTime,
+        selectedActivities
+      )
+      exportData.deviceInfo.platform = Platform.OS
+      const content = ExportService.exportToJSON(exportData)
+      const fileName = ExportService.generateFileName('json', sessions)
+      
+      // Write file to temporary directory
+      const tempPath = `${RNFS.TemporaryDirectoryPath}/${fileName}`
+      await RNFS.writeFile(tempPath, content, 'utf8')
         
-        let content: string
-        let fileName: string
-        
-        if (format === 'json') {
-          const exportData = ExportService.prepareExportData(
-            activities,
-            sessions,
-            currentSession,
-            isFirstTime,
-            selectedActivities
-          )
-          exportData.deviceInfo.platform = Platform.OS
-          content = ExportService.exportToJSON(exportData)
-          fileName = ExportService.generateFileName('json', sessions)
-        } else {
-          content = ExportService.exportToCSV(activities, sessions)
-          fileName = ExportService.generateFileName('csv', sessions)
-        }
-        
-        // Write file to temporary directory
-        const tempPath = `${RNFS.TemporaryDirectoryPath}/${fileName}`
-        await RNFS.writeFile(tempPath, content, 'utf8')
-        
-        // Share the file
-        const result = await Share.share({
-          url: Platform.OS === 'ios' ? `file://${tempPath}` : tempPath,
-          title: `Export Zen Tracker Data`,
-        }, {
-          subject: fileName,
-          dialogTitle: 'Export Zen Tracker Data',
-        })
-        
-        if (result.action === Share.sharedAction) {
-          console.log('Data exported successfully')
-          // Clean up temp file after a delay
-          setTimeout(() => {
-            RNFS.unlink(tempPath).catch(() => {})
-          }, 5000)
-        } else {
-          // Clean up immediately if cancelled
+      // Share the file
+      const result = await Share.share({
+        url: Platform.OS === 'ios' ? `file://${tempPath}` : tempPath,
+        title: `Export Zen Tracker Data`,
+      }, {
+        subject: fileName,
+        dialogTitle: 'Export Zen Tracker Data',
+      })
+      
+      if (result.action === Share.sharedAction) {
+        console.log('Data exported successfully')
+        // Clean up temp file after a delay
+        setTimeout(() => {
           RNFS.unlink(tempPath).catch(() => {})
-        }
-      } catch (error) {
-        console.error('Export failed:', error)
-        Alert.alert('Export Failed', 'Unable to export data. Please try again.')
-      } finally {
-        setIsExporting(false)
+        }, 5000)
+      } else {
+        // Clean up immediately if cancelled
+        RNFS.unlink(tempPath).catch(() => {})
       }
+    } catch (error) {
+      console.error('Export failed:', error)
+      Alert.alert('Export Failed', 'Unable to export data. Please try again.')
+    } finally {
+      setIsExporting(false)
     }
-    
-    showExportOptions()
   }
 
   const handleImport = async () => {
@@ -237,7 +195,7 @@ export default function ReportPage() {
       
       // Open document picker
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/json', 'text/csv', 'text/comma-separated-values'],
+        type: 'application/json',
         copyToCacheDirectory: true,
       })
       
@@ -247,40 +205,8 @@ export default function ReportPage() {
         const response = await fetch(file.uri)
         const content = await response.text()
         
-        // Determine file type
-        const isCSV = file.name?.toLowerCase().endsWith('.csv') || false
-        
-        if (isCSV) {
-          // Handle CSV import
-          const parsed = ImportService.parseCSV(content)
-          if (parsed) {
-            Alert.alert(
-              'Import CSV Data',
-              `Found ${parsed.activities.length} activities. How would you like to import?`,
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Add to Existing',
-                  onPress: () => {
-                    // Add imported activities
-                    parsed.activities.forEach(activity => {
-                      store.addActivity(activity.name)
-                      const newActivity = activities[0] // Get the newly added activity
-                      if (newActivity) {
-                        store.updateActivity(newActivity.id, { totalTime: activity.totalTime })
-                      }
-                    })
-                    Alert.alert('Success', `Imported ${parsed.activities.length} activities`)
-                  }
-                },
-              ]
-            )
-          } else {
-            Alert.alert('Import Failed', 'Invalid CSV format')
-          }
-        } else {
-          // Handle JSON import
-          const showImportModeOptions = () => {
+        // Handle JSON import
+        const showImportModeOptions = () => {
             Alert.alert(
               'Import Data',
               'How would you like to import the data?\n\n• Replace All: Delete current data & replace with imported\n• Merge: Combine with existing data\n• Add as New: Keep all data separate',
@@ -322,10 +248,9 @@ export default function ReportPage() {
             } else {
               Alert.alert('Import Failed', result.error || 'Unknown error occurred')
             }
-          }
-          
-          showImportModeOptions()
         }
+        
+        showImportModeOptions()
       }
     } catch (error) {
       console.error('Import failed:', error)
