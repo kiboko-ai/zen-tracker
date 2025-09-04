@@ -131,6 +131,25 @@ class LiveActivityService {
   }
 
   /**
+   * End all active Live Activities
+   * Useful for cleanup on app start or when needed
+   */
+  async endAllActivities(): Promise<void> {
+    const available = await this.isAvailable();
+    if (!available) {
+      return;
+    }
+
+    try {
+      // End all Live Activities via native module
+      await NativeModules.LiveActivityModule.endAllActivities();
+      console.log('All Live Activities ended');
+    } catch (error) {
+      console.error('Failed to end all Live Activities:', error);
+    }
+  }
+
+  /**
    * Get all active Live Activities
    * @returns Array of activity IDs
    * 

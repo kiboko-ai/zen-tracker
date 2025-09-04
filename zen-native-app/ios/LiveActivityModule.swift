@@ -158,6 +158,29 @@ class LiveActivityModule: NSObject {
     }
   }
   
+  // MARK: - End all active Live Activities
+  @objc
+  func endAllActivities(_ resolve: @escaping RCTPromiseResolveBlock,
+                       rejecter reject: @escaping RCTPromiseRejectBlock) {
+    if #available(iOS 16.1, *) {
+      Task {
+        // Get all active activities
+        let activities = Activity<ZenActivityAttributes>.activities
+        print("Ending all Live Activities. Found \(activities.count) active activities")
+        
+        // End each activity
+        for activity in activities {
+          await activity.end(nil, dismissalPolicy: .immediate)
+          print("Ended Live Activity: \(activity.id)")
+        }
+        
+        resolve(true)
+      }
+    } else {
+      reject("UNSUPPORTED", "Live Activities require iOS 16.1+", nil)
+    }
+  }
+  
   // MARK: - Get all active activities
   @objc
   func getActiveActivities(_ resolve: @escaping RCTPromiseResolveBlock,

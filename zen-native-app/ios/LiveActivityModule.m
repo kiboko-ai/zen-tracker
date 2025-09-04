@@ -30,6 +30,10 @@ RCT_EXTERN_METHOD(endActivity:(NSString *)activityId
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+// End all active Live Activities
+RCT_EXTERN_METHOD(endAllActivities:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 // Get all active Live Activities
 RCT_EXTERN_METHOD(getActiveActivities:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)

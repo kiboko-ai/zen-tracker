@@ -22,6 +22,7 @@ import DraggableFlatList, {
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 import { useNotifications } from '../hooks/useNotifications'
+import LiveActivityService from '../services/notifications/LiveActivityService'
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>
 
@@ -56,8 +57,14 @@ export default function HomePage() {
   }, [])
 
   // Check and reschedule daily reminder on app start
+  // Also clean up any stale Live Activities
   useEffect(() => {
-    const checkDailyReminder = async () => {
+    const initializeApp = async () => {
+      // Clean up any stale Live Activities
+      console.log('Cleaning up stale Live Activities on app start')
+      await LiveActivityService.endAllActivities()
+      
+      // Check daily reminder
       const now = new Date()
       const today = format(now, 'yyyy-MM-dd')
       const currentHour = now.getHours()
@@ -85,7 +92,7 @@ export default function HomePage() {
       }
     }
     
-    checkDailyReminder()
+    initializeApp()
   }, [])
 
   useEffect(() => {

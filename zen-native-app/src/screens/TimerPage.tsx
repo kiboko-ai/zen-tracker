@@ -147,7 +147,7 @@ export default function TimerPage() {
         intervalRef.current = null
       }
     }
-  }, [isRunning, isPaused, targetSeconds, completionDotAnim, liveActivityId, hasNotifiedGoal, hasNotifiedDouble])
+  }, [isRunning, isPaused, targetSeconds, completionDotAnim, liveActivityId, hasNotifiedGoal, hasNotifiedTargetPlusHour])
 
 
   useEffect(() => {
@@ -347,52 +347,53 @@ export default function TimerPage() {
   }
 
   const handleStop = async () => {
-    // Cancel all scheduled notifications
-    if (checkInNotificationId) {
-      await cancelNotification(checkInNotificationId)
-      setCheckInNotificationId(null)
-    }
+    console.log('⏹️ STOP BUTTON PRESSED')
     
-    // Cancel smart check-in notifications
-    // 스마트 체크인 알림 취소
-    if (checkInNotificationIds.length > 0) {
-      for (const id of checkInNotificationIds) {
-        await cancelNotification(id)
-      }
-      setCheckInNotificationIds([])
-    }
-    
-    if (hourlyNotificationId) {
-      await cancelNotification(hourlyNotificationId)
-      setHourlyNotificationId(null)
-    }
-    
-    if (goalNotificationId && !hasNotifiedGoal) {
-      // Cancel goal notification if not yet achieved
-      await cancelNotification(goalNotificationId)
-      setGoalNotificationId(null)
-    }
-    
-    if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour) {
-      // Cancel target+1hr notification if not yet achieved
-      await cancelNotification(targetPlusHourNotificationId)
-      setTargetPlusHourNotificationId(null)
-    }
-    
-    // Send completion notification - TEMPORARILY DISABLED
-    // if (activity && seconds > 0) {
-    //   const totalMinutes = Math.floor(seconds / 60)
-    //   await scheduleCompletionNotification(activity.name, totalMinutes)
-    // }
-    
-    // End Live Activity if exists
+    // End Live Activity FIRST (most important for user)
     if (liveActivityId) {
-      await LiveActivityService.endActivity(liveActivityId)
-      setLiveActivityId(null)
+      console.log('⏹️ Ending Live Activity:', liveActivityId)
+      try {
+        await LiveActivityService.endActivity(liveActivityId)
+        setLiveActivityId(null)
+      } catch (error) {
+        console.error('Failed to end Live Activity:', error)
+      }
     }
     
+    // End the session and navigate
+    console.log('⏹️ Calling endSession...')
     endSession()
+    console.log('⏹️ Navigating to Report...')
     navigation.navigate('Report')
+    
+    // Then clean up notifications asynchronously
+    const cleanupNotifications = async () => {
+      // Cancel all scheduled notifications
+      if (checkInNotificationId) {
+        await cancelNotification(checkInNotificationId)
+      }
+      
+      // Cancel smart check-in notifications
+      if (checkInNotificationIds.length > 0) {
+        for (const id of checkInNotificationIds) {
+          await cancelNotification(id)
+        }
+      }
+      
+      if (hourlyNotificationId) {
+        await cancelNotification(hourlyNotificationId)
+      }
+      
+      if (goalNotificationId && !hasNotifiedGoal) {
+        await cancelNotification(goalNotificationId)
+      }
+      
+      if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour) {
+        await cancelNotification(targetPlusHourNotificationId)
+      }
+    }
+    
+    cleanupNotifications()
   }
 
   const formatTime = (totalSeconds: number) => {
@@ -618,6 +619,8 @@ export default function TimerPage() {
                 <TouchableOpacity
                   onPress={handleStop}
                   style={styles.stopButton}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <View style={styles.stopIcon} />
                 </TouchableOpacity>
