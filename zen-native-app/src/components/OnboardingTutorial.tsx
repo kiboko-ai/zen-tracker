@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 import Svg, { Circle, Path, Rect, Line } from 'react-native-svg'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { AnalyticsService, eventNames } from '../services/AnalyticsService'
 
 const { width, height } = Dimensions.get('window')
 
@@ -19,6 +20,13 @@ interface OnboardingTutorialProps {
 
 export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ visible, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0)
+  
+  // Log tutorial view when component becomes visible
+  React.useEffect(() => {
+    if (visible) {
+      AnalyticsService.logEvent(eventNames.TUTORIAL_VIEW)
+    }
+  }, [visible])
 
   const renderIcon = (step: number) => {
     switch (step) {
@@ -94,6 +102,8 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ visible,
 
   const handleComplete = async () => {
     await AsyncStorage.setItem('hasSeenTutorial', 'true')
+    // Log tutorial completion
+    AnalyticsService.logEvent(eventNames.TUTORIAL_COMPLETE)
     onComplete()
   }
 

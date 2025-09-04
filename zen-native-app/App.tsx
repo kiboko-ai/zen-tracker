@@ -11,6 +11,7 @@ import OnboardingPage from './src/screens/OnboardingPage'
 import { OnboardingTutorial } from './src/components/OnboardingTutorial'
 import { useStore } from './src/store/store'
 import NotificationService from './src/services/notifications/NotificationService'
+import { AnalyticsService } from './src/services/AnalyticsService'
 
 export type RootStackParamList = {
   Onboarding: undefined
@@ -36,6 +37,9 @@ export default function App() {
 
   const initializeApp = async () => {
     try {
+      // Log app open event
+      await AnalyticsService.logAppOpen()
+      
       // Initialize notification service
       await NotificationService.initialize()
       
@@ -83,7 +87,14 @@ export default function App() {
           visible={showTutorial}
           onComplete={() => setShowTutorial(false)}
         />
-        <NavigationContainer>
+        <NavigationContainer
+          onStateChange={(state) => {
+            if (state) {
+              const currentRoute = state.routes[state.index]
+              AnalyticsService.logScreenView(currentRoute.name)
+            }
+          }}
+        >
           <Stack.Navigator
             initialRouteName={shouldShowOnboarding ? "Onboarding" : "Home"}
             screenOptions={{

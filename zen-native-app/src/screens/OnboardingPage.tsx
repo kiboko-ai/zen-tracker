@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
+import { AnalyticsService, eventNames } from '../services/AnalyticsService'
 
 type OnboardingScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Onboarding'>
 
@@ -23,6 +24,11 @@ export default function OnboardingPage() {
   const { addActivity, setFirstTime, setSelectedActivities } = useStore()
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [customActivity, setCustomActivity] = useState('')
+  
+  // Log onboarding start when component mounts
+  React.useEffect(() => {
+    AnalyticsService.logEvent(eventNames.ONBOARDING_START)
+  }, [])
 
   const handleToggleActivity = (activity: string) => {
     if (selectedItems.includes(activity)) {
@@ -47,6 +53,12 @@ export default function OnboardingPage() {
 
     selectedItems.forEach(activity => {
       addActivity(activity)
+    })
+    
+    // Log onboarding completion
+    AnalyticsService.logEvent(eventNames.ONBOARDING_COMPLETE, {
+      activities_selected: selectedItems.length,
+      activities: selectedItems.join(',')
     })
     
     setSelectedActivities(selectedItems)

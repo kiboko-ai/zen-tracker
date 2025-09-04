@@ -21,6 +21,7 @@ import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 import BackgroundTimer from '../services/BackgroundTimer'
 import { useNotifications } from '../hooks/useNotifications'
+import { AnalyticsService, eventNames } from '../services/AnalyticsService'
 
 type TimerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Timer'>
 type TimerScreenRouteProp = RouteProp<RootStackParamList, 'Timer'>
@@ -149,21 +150,41 @@ export default function TimerPage() {
       if (!granted) {
         // Show permission denied message but continue with timer
         showPermissionDeniedAlert()
+        AnalyticsService.logEvent(eventNames.NOTIFICATION_PERMISSION_DENIED)
       } else {
         // 권한이 승인되면 일일 리마인더도 자동으로 설정
         // If permission granted, also schedule daily reminder
+        AnalyticsService.logEvent(eventNames.NOTIFICATION_PERMISSION_GRANTED)
         try {
           const isScheduled = await isDailyReminderScheduled()
           if (!isScheduled) {
             const reminderId = await scheduleDailyReminder()
             if (reminderId) {
               console.log('Daily reminder auto-scheduled after permission grant:', reminderId)
+              AnalyticsService.logEvent(eventNames.NOTIFICATION_DAILY_REMINDER_SET)
             }
           }
         } catch (error) {
           console.error('Failed to schedule daily reminder:', error)
         }
       }
+    }
+    
+    // Log timer start event
+    AnalyticsService.logEvent(eventNames.TIMER_START, {
+      activity_name: activity?.name,
+      target_duration: targetSeconds,
+      target_hours: targetHours,
+      target_minutes: targetMinutes
+    })
+    
+    // Log target set event if target is set
+    if (targetSeconds > 0) {
+      AnalyticsService.logEvent(eventNames.TIMER_TARGET_SET, {
+        hours: targetHours,
+        minutes: targetMinutes,
+        total_seconds: targetSeconds
+      })
     }
     
     const targetDuration = targetSeconds > 0 ? targetSeconds * 1000 : undefined
@@ -215,6 +236,12 @@ export default function TimerPage() {
     pauseSession()
     pauseStartRef.current = new Date()
     setIsPaused(true)
+    
+    // Log pause event
+    AnalyticsService.logEvent(eventNames.TIMER_PAUSE, {
+      activity_name: activity?.name,
+      duration_so_far: seconds
+    })
   }
 
   const handleResume = () => {
@@ -225,6 +252,11 @@ export default function TimerPage() {
       pauseStartRef.current = null
     }
     setIsPaused(false)
+    
+    // Log resume event
+    AnalyticsService.logEvent(eventNames.TIMER_RESUME, {
+      activity_name: activity?.name
+    })
   }
 
   const handleStop = async () => {
@@ -265,6 +297,21 @@ export default function TimerPage() {
     //   const totalMinutes = Math.floor(seconds / 60)
     //   await scheduleCompletionNotification(activity.name, totalMinutes)
     // }
+    
+    // Log timer complete event
+    if (activity && seconds > 0) {
+      AnalyticsService.logEvent(eventNames.TIMER_COMPLETE, {
+        activity_name: activity.name,
+        actual_duration: seconds,
+        target_duration: targetSeconds,
+        goal_achieved: isGoalReached
+      })
+      
+      // Log notification event if timer completed
+      if (hasPermission) {
+        AnalyticsService.logEvent(eventNames.NOTIFICATION_TIMER_COMPLETE)
+      }
+    }
     
     // End Live Activity if exists
     // TODO: Implement when Live Activity native module is ready

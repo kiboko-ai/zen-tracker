@@ -21,6 +21,7 @@ import DraggableFlatList, {
 } from 'react-native-draggable-flatlist'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
+import { AnalyticsService, eventNames } from '../services/AnalyticsService'
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>
 
@@ -67,6 +68,10 @@ export default function HomePage() {
   const handleSaveNewActivity = () => {
     if (newActivityName.trim()) {
       addActivity(newActivityName)
+      // Log activity creation
+      AnalyticsService.logEvent(eventNames.ACTIVITY_CREATE, {
+        activity_name: newActivityName
+      })
       setNewActivityName('')
       setShowAddModal(false)
       setEditingId(null)
@@ -84,6 +89,10 @@ export default function HomePage() {
           onPress: (text) => {
             if (text?.trim()) {
               updateActivity(id, { name: text })
+              // Log activity update
+              AnalyticsService.logEvent(eventNames.ACTIVITY_UPDATE, {
+                activity_name: text
+              })
             }
           },
         },
@@ -99,7 +108,14 @@ export default function HomePage() {
       'Are you sure you want to remove this activity?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => removeActivity(id) },
+        { text: 'Remove', style: 'destructive', onPress: () => {
+          const activity = activities.find(a => a.id === id)
+          removeActivity(id)
+          // Log activity deletion
+          AnalyticsService.logEvent(eventNames.ACTIVITY_DELETE, {
+            activity_name: activity?.name
+          })
+        }},
       ]
     )
   }
@@ -256,6 +272,10 @@ export default function HomePage() {
               order: index
             }))
             reorderActivities(updatedActivities)
+            // Log activity reordering
+            AnalyticsService.logEvent(eventNames.ACTIVITY_REORDER, {
+              activities_count: updatedActivities.length
+            })
           }
         }}
         keyExtractor={(item) => item.id}

@@ -23,6 +23,7 @@ import { ExportService } from '../services/dataTransfer/ExportService'
 import { ImportService } from '../services/dataTransfer/ImportService'
 import * as DocumentPicker from 'expo-document-picker'
 import RNFS from 'react-native-fs'
+import { AnalyticsService, eventNames } from '../services/AnalyticsService'
 
 type TabType = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
@@ -37,6 +38,13 @@ export default function ReportPage() {
   const [chartView, setChartView] = useState<'timeline' | 'rings'>('timeline')
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  
+  // Log report view when component mounts or tab changes
+  React.useEffect(() => {
+    AnalyticsService.logEvent(eventNames.REPORT_VIEW, {
+      period: activeTab
+    })
+  }, [activeTab])
   
   const now = selectedDate
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
@@ -174,6 +182,12 @@ export default function ReportPage() {
         
         if (result.action === Share.sharedAction) {
           console.log('Data exported successfully')
+          // Log successful export
+          AnalyticsService.logEvent(eventNames.DATA_EXPORT, {
+            format: format,
+            activities_count: activities.length,
+            sessions_count: sessions.length
+          })
           // Clean up temp file after a delay
           setTimeout(() => {
             RNFS.unlink(tempPath).catch(() => {})
@@ -235,12 +249,23 @@ export default function ReportPage() {
                       }
                     })
                     Alert.alert('Success', `Imported ${parsed.activities.length} activities`)
+                    // Log successful CSV import
+                    AnalyticsService.logEvent(eventNames.DATA_IMPORT_SUCCESS, {
+                      format: 'csv',
+                      mode: 'append',
+                      activities_count: parsed.activities.length
+                    })
                   }
                 },
               ]
             )
           } else {
             Alert.alert('Import Failed', 'Invalid CSV format')
+            // Log CSV import error
+            AnalyticsService.logEvent(eventNames.DATA_IMPORT_ERROR, {
+              format: 'csv',
+              error: 'Invalid CSV format'
+            })
           }
         } else {
           // Handle JSON import
@@ -283,8 +308,21 @@ export default function ReportPage() {
                 'Import Successful',
                 `Imported ${result.activitiesImported} activities and ${result.sessionsImported} sessions`
               )
+              // Log successful JSON import
+              AnalyticsService.logEvent(eventNames.DATA_IMPORT_SUCCESS, {
+                format: 'json',
+                mode: mode,
+                activities_count: result.activitiesImported,
+                sessions_count: result.sessionsImported
+              })
             } else {
               Alert.alert('Import Failed', result.error || 'Unknown error occurred')
+              // Log JSON import error
+              AnalyticsService.logEvent(eventNames.DATA_IMPORT_ERROR, {
+                format: 'json',
+                mode: mode,
+                error: result.error || 'Unknown error'
+              })
             }
           }
           
