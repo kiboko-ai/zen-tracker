@@ -25,7 +25,7 @@ struct ZenActivityWidgetLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack {
                         Image(systemName: "timer")
-                            .foregroundColor(.orange)
+                            .foregroundColor(.white)
                         Text(context.attributes.activityName)
                             .font(.caption)
                     }
@@ -47,7 +47,7 @@ struct ZenActivityWidgetLiveActivity: Widget {
                     if context.state.isPaused {
                         Text("PAUSED")
                             .font(.caption2)
-                            .foregroundColor(.orange)
+                            .foregroundColor(.gray)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -57,7 +57,7 @@ struct ZenActivityWidgetLiveActivity: Widget {
                 }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.circle.fill" : "timer.circle.fill")
-                    .foregroundColor(.orange)
+                    .foregroundColor(.white)
             } compactTrailing: {
                 if context.state.isPaused {
                     Text(formatTimeCompact(seconds: context.state.elapsedSeconds))
@@ -70,10 +70,10 @@ struct ZenActivityWidgetLiveActivity: Widget {
                 }
             } minimal: {
                 Image(systemName: "timer")
-                    .foregroundColor(.orange)
+                    .foregroundColor(.white)
             }
             .widgetURL(URL(string: "zentracker://timer"))
-            .keylineTint(.orange)
+            .keylineTint(.white)
         }
     }
 }
@@ -102,7 +102,7 @@ struct LockScreenLiveActivityView: View {
             // Header
             HStack {
                 Image(systemName: "timer.circle.fill")
-                    .foregroundColor(.orange)
+                    .foregroundColor(.white)
                     .font(.system(size: 20))
                 
                 Text(context.attributes.activityName)
@@ -116,8 +116,8 @@ struct LockScreenLiveActivityView: View {
                         .font(.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
-                        .background(Color.orange.opacity(0.3))
-                        .foregroundColor(.orange)
+                        .background(Color.gray.opacity(0.3))
+                        .foregroundColor(.white)
                         .cornerRadius(4)
                 }
             }
@@ -179,7 +179,7 @@ struct DynamicIslandProgressView: View {
     
     var body: some View {
         ProgressView(value: progress)
-            .tint(.orange)
+            .tint(.white)
     }
 }
 
@@ -203,7 +203,7 @@ struct ProgressBarView: View {
     var body: some View {
         VStack(spacing: 6) {
             ProgressView(value: progress)
-                .tint(.orange)
+                .tint(.white)
                 .scaleEffect(y: 1.5)
             
             HStack {
@@ -215,7 +215,7 @@ struct ProgressBarView: View {
                 
                 Text("\(progressPercent)%")
                     .font(.caption)
-                    .foregroundColor(.orange)
+                    .foregroundColor(.white)
             }
         }
     }
