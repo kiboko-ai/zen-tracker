@@ -40,6 +40,7 @@ interface AppState {
   pauseSession: () => void
   resumeSession: () => void
   endSession: () => void
+  removeSession: (sessionId: string) => void
   
   setFirstTime: (value: boolean) => void
   setSelectedActivities: (activities: string[]) => void
@@ -155,6 +156,22 @@ export const useStore = create<AppState>()(
               : a
           )
         }))
+      },
+      
+      removeSession: (sessionId) => {
+        set((state) => {
+          const session = state.sessions.find(s => s.id === sessionId)
+          if (!session) return state
+          
+          return {
+            sessions: state.sessions.filter(s => s.id !== sessionId),
+            activities: state.activities.map(a => 
+              a.id === session.activityId 
+                ? { ...a, totalTime: Math.max(0, a.totalTime - session.duration) }
+                : a
+            )
+          }
+        })
       },
       
       setFirstTime: (value) => set({ isFirstTime: value }),

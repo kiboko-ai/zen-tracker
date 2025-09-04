@@ -31,7 +31,7 @@ const { width } = Dimensions.get('window')
 export default function ReportPage() {
   const navigation = useNavigation()
   const store = useStore()
-  const { sessions, activities, currentSession, isFirstTime, selectedActivities } = store
+  const { sessions, activities, currentSession, isFirstTime, selectedActivities, removeSession } = store
   const [activeTab, setActiveTab] = useState<TabType>('daily')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [chartView, setChartView] = useState<'timeline' | 'rings'>('timeline')
@@ -41,6 +41,25 @@ export default function ReportPage() {
   
   const now = selectedDate
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+
+  const handleRemoveSession = (sessionId: string) => {
+    Alert.alert(
+      'Delete Session',
+      'Are you sure you want to delete this session? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive', 
+          onPress: () => removeSession(sessionId) 
+        }
+      ]
+    )
+  }
+
+  const formatSessionTime = (date: Date) => {
+    return format(date, 'HH:mm')
+  }
 
   const getDateRange = (tab: TabType) => {
     switch (tab) {
@@ -61,6 +80,18 @@ export default function ReportPage() {
       isWithinInterval(new Date(session.startTime), range)
     )
   }, [sessions, activeTab, selectedDate])
+
+  const dailySessions = useMemo(() => {
+    const dayStart = startOfDay(selectedDate)
+    const dayEnd = endOfDay(selectedDate)
+    
+    return sessions
+      .filter(session => {
+        const sessionDate = new Date(session.startTime)
+        return isWithinInterval(sessionDate, { start: dayStart, end: dayEnd })
+      })
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+  }, [sessions, selectedDate])
 
   const stats = useMemo(() => {
     const totalTime = filteredSessions.reduce((acc, session) => acc + session.duration, 0)
@@ -740,6 +771,34 @@ export default function ReportPage() {
             )}
           </View>
         )}
+
+        {activeTab === 'daily' && dailySessions.length > 0 && (
+          <View style={styles.sessionsSection}>
+            <Text style={styles.sessionsTitle}>Session Details</Text>
+            {dailySessions.map((session) => {
+              const activity = activities.find(a => a.id === session.activityId)
+              return (
+                <View key={session.id} style={styles.sessionCard}>
+                  <View style={styles.sessionInfo}>
+                    <Text style={styles.sessionActivity}>{activity?.name || 'Unknown'}</Text>
+                    <Text style={styles.sessionTime}>
+                      {formatSessionTime(new Date(session.startTime))} - {session.endTime ? formatSessionTime(new Date(session.endTime)) : 'In Progress'}
+                    </Text>
+                    <Text style={styles.sessionDuration}>
+                      Duration: {formatDuration(session.duration)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleRemoveSession(session.id)}
+                    style={styles.sessionDeleteButton}
+                  >
+                    <Text style={styles.sessionDeleteText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              )
+            })}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   )
@@ -1047,5 +1106,60 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     minWidth: 30,
     textAlign: 'right',
+  },
+  sessionsSection: {
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  sessionsTitle: {
+    fontSize: 18,
+    fontWeight: '400',
+    marginBottom: 16,
+    color: '#000',
+  },
+  sessionCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sessionInfo: {
+    flex: 1,
+  },
+  sessionActivity: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000',
+    marginBottom: 4,
+  },
+  sessionTime: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  sessionDuration: {
+    fontSize: 12,
+    fontWeight: '300',
+    color: '#9CA3AF',
+  },
+  sessionDeleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  sessionDeleteText: {
+    fontSize: 20,
+    fontWeight: '300',
+    color: '#6B7280',
+    lineHeight: 20,
   },
 })
