@@ -21,12 +21,24 @@ import DraggableFlatList, {
 } from 'react-native-draggable-flatlist'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
+import { useNotifications } from '../hooks/useNotifications'
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>
 
 export default function HomePage() {
   const navigation = useNavigation<HomeScreenNavigationProp>()
-  const { activities, sessions, addActivity, removeActivity, updateActivity, reorderActivities } = useStore()
+  const { 
+    activities, 
+    sessions, 
+    addActivity, 
+    removeActivity, 
+    updateActivity, 
+    reorderActivities,
+    lastDailyReminderCancelDate,
+    setLastDailyReminderCancelDate,
+    getHasActivityBeforeMorning
+  } = useStore()
+  const { scheduleDailyReminder, isDailyReminderScheduled } = useNotifications()
   const [editMode, setEditMode] = useState(false)
   const [newActivityName, setNewActivityName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -41,6 +53,39 @@ export default function HomePage() {
       setCurrentTime(new Date())
     }, 1000)
     return () => clearInterval(timer)
+  }, [])
+
+  // Check and reschedule daily reminder on app start
+  useEffect(() => {
+    const checkDailyReminder = async () => {
+      const now = new Date()
+      const today = format(now, 'yyyy-MM-dd')
+      const currentHour = now.getHours()
+      
+      // If it's a new day and past 9 AM, or if reminder was cancelled yesterday
+      if (lastDailyReminderCancelDate !== today) {
+        const isScheduled = await isDailyReminderScheduled()
+        
+        // Check if user has already been active before 9 AM today
+        const hasBeenActiveToday = getHasActivityBeforeMorning()
+        
+        if (!hasBeenActiveToday && currentHour < 9) {
+          // It's before 9 AM and user hasn't been active yet today
+          if (!isScheduled) {
+            console.log('Scheduling daily reminder for today at 9 AM')
+            await scheduleDailyReminder()
+          }
+        } else if (currentHour >= 9) {
+          // It's past 9 AM, schedule for tomorrow
+          if (!isScheduled) {
+            console.log('Scheduling daily reminder for tomorrow at 9 AM')
+            await scheduleDailyReminder()
+          }
+        }
+      }
+    }
+    
+    checkDailyReminder()
   }, [])
 
   useEffect(() => {

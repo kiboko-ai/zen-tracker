@@ -30,6 +30,7 @@ interface AppState {
   currentSession: Session | null
   isFirstTime: boolean
   selectedActivities: string[]
+  lastDailyReminderCancelDate: string | null // Track when daily reminder was last cancelled
   
   addActivity: (name: string) => void
   removeActivity: (id: string) => void
@@ -44,6 +45,8 @@ interface AppState {
   
   setFirstTime: (value: boolean) => void
   setSelectedActivities: (activities: string[]) => void
+  setLastDailyReminderCancelDate: (date: string) => void
+  getHasActivityBeforeMorning: () => boolean
   
   // Import methods
   importData: (data: {
@@ -62,6 +65,7 @@ export const useStore = create<AppState>()(
       currentSession: null,
       isFirstTime: true,
       selectedActivities: [],
+      lastDailyReminderCancelDate: null,
       
       addActivity: (name) => {
         const newActivity: Activity = {
@@ -176,6 +180,23 @@ export const useStore = create<AppState>()(
       
       setFirstTime: (value) => set({ isFirstTime: value }),
       setSelectedActivities: (activities) => set({ selectedActivities: activities }),
+      
+      setLastDailyReminderCancelDate: (date) => set({ lastDailyReminderCancelDate: date }),
+      
+      getHasActivityBeforeMorning: () => {
+        const state = get()
+        const today = new Date()
+        const todayStart = new Date()
+        todayStart.setHours(0, 0, 0, 0)
+        const nineAM = new Date()
+        nineAM.setHours(9, 0, 0, 0)
+        
+        // Check if any session started today before 9 AM
+        return state.sessions.some(session => {
+          const sessionStart = new Date(session.startTime)
+          return sessionStart >= todayStart && sessionStart < nineAM
+        })
+      },
       
       importData: (data, mode) => {
         const currentState = get()

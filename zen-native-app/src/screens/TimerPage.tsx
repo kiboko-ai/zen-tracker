@@ -18,6 +18,7 @@ import { StackNavigationProp } from '@react-navigation/stack'
 import { AnimatedCircularProgress } from 'react-native-circular-progress'
 import { Picker } from '@react-native-picker/picker'
 import WheelPicker from 'react-native-wheely'
+import { format } from 'date-fns'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 import BackgroundTimer from '../services/BackgroundTimer'
@@ -34,7 +35,17 @@ export default function TimerPage() {
   const route = useRoute<TimerScreenRouteProp>()
   const activityId = route.params.id
   
-  const { activities, startSession, pauseSession, resumeSession, endSession, currentSession, updateActivity } = useStore()
+  const { 
+    activities, 
+    startSession, 
+    pauseSession, 
+    resumeSession, 
+    endSession, 
+    currentSession, 
+    updateActivity,
+    lastDailyReminderCancelDate,
+    setLastDailyReminderCancelDate
+  } = useStore()
   const activity = activities.find(a => a.id === activityId)
   
   // Notification hooks
@@ -48,6 +59,7 @@ export default function TimerPage() {
     scheduleTargetPlusOneHourNotification,
     scheduleDailyReminder,         // 일일 리마인더 스케줄링 함수 추가
     isDailyReminderScheduled,      // 일일 리마인더 상태 확인 함수 추가
+    cancelDailyReminder,           // 일일 리마인더 취소 함수 추가
     cancelNotification,
     cancelAllNotifications,
     scheduleNotificationWithDelay,
@@ -189,6 +201,18 @@ export default function TimerPage() {
     setHasNotifiedTargetPlusHour(false) // Reset target+1hr notification flag
     setIsRunning(true)
     setShowTargetPicker(false)
+    
+    // Check if it's before 9 AM and cancel daily reminder if not already cancelled today
+    const now = new Date()
+    const currentHour = now.getHours()
+    const today = format(now, 'yyyy-MM-dd')
+    
+    if (currentHour < 9 && lastDailyReminderCancelDate !== today) {
+      // Activity started before 9 AM, cancel today's daily reminder
+      console.log('Activity started before 9 AM, cancelling daily reminder for today')
+      await cancelDailyReminder()
+      setLastDailyReminderCancelDate(today)
+    }
     
     if (activity && hasPermission) {
       if (targetSeconds > 0) {
