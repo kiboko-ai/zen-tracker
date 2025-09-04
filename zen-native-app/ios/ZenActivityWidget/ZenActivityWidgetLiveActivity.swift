@@ -108,6 +108,7 @@ struct LockScreenLiveActivityView: View {
                 Text(context.attributes.activityName)
                     .font(.headline)
                     .fontWeight(.semibold)
+                    .foregroundColor(.white)
                 
                 Spacer()
                 
@@ -168,18 +169,20 @@ struct LockScreenLiveActivityView: View {
 struct DynamicIslandProgressView: View {
     let context: ActivityViewContext<ZenActivityAttributes>
     
-    var progress: Double {
-        if context.state.isPaused {
-            return Double(context.state.elapsedSeconds) / Double(context.attributes.targetSeconds)
-        } else {
-            let elapsed = Date().timeIntervalSince(context.attributes.startTime) - context.state.pausedDuration
-            return min(1.0, elapsed / Double(context.attributes.targetSeconds))
-        }
-    }
-    
     var body: some View {
-        ProgressView(value: progress)
-            .tint(.white)
+        TimelineView(.animation) { timeline in
+            let progress: Double = {
+                if context.state.isPaused {
+                    return Double(context.state.elapsedSeconds) / Double(context.attributes.targetSeconds)
+                } else {
+                    let elapsed = Date().timeIntervalSince(context.attributes.startTime) - context.state.pausedDuration
+                    return min(1.0, elapsed / Double(context.attributes.targetSeconds))
+                }
+            }()
+            
+            ProgressView(value: progress)
+                .tint(.white)
+        }
     }
 }
 
@@ -187,35 +190,36 @@ struct DynamicIslandProgressView: View {
 struct ProgressBarView: View {
     let context: ActivityViewContext<ZenActivityAttributes>
     
-    var progress: Double {
-        if context.state.isPaused {
-            return Double(context.state.elapsedSeconds) / Double(context.attributes.targetSeconds)
-        } else {
-            let elapsed = Date().timeIntervalSince(context.attributes.startTime) - context.state.pausedDuration
-            return min(1.0, elapsed / Double(context.attributes.targetSeconds))
-        }
-    }
-    
-    var progressPercent: Int {
-        min(100, Int(progress * 100))
-    }
-    
     var body: some View {
-        VStack(spacing: 6) {
-            ProgressView(value: progress)
-                .tint(.white)
-                .scaleEffect(y: 1.5)
+        // Use TimelineView for real-time updates
+        TimelineView(.animation) { timeline in
+            let progress: Double = {
+                if context.state.isPaused {
+                    return Double(context.state.elapsedSeconds) / Double(context.attributes.targetSeconds)
+                } else {
+                    let elapsed = Date().timeIntervalSince(context.attributes.startTime) - context.state.pausedDuration
+                    return min(1.0, elapsed / Double(context.attributes.targetSeconds))
+                }
+            }()
             
-            HStack {
-                Text("Target: \(formatTime(seconds: context.attributes.targetSeconds))")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+            let progressPercent = min(100, Int(progress * 100))
+            
+            VStack(spacing: 6) {
+                ProgressView(value: progress)
+                    .tint(.white)
+                    .scaleEffect(y: 1.5)
                 
-                Spacer()
-                
-                Text("\(progressPercent)%")
-                    .font(.caption)
-                    .foregroundColor(.white)
+                HStack {
+                    Text("Target: \(formatTime(seconds: context.attributes.targetSeconds))")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
+                    Spacer()
+                    
+                    Text("\(progressPercent)%")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                }
             }
         }
     }
