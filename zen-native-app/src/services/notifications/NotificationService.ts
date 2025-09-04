@@ -180,7 +180,7 @@ class NotificationService {
   }
 
   /**
-   * Schedule smart check-in reminders that avoid conflicts with goal/2x notifications
+   * Schedule smart check-in reminders that avoid conflicts with goal notifications
    * 충돌을 회피하는 스마트 체크인 알림 스케줄링
    * @param activityName Name of the activity
    * @param targetSeconds Target time in seconds
@@ -196,22 +196,22 @@ class NotificationService {
     }
 
     const notificationIds: string[] = [];
-    const doubleTargetSeconds = targetSeconds * 2;
+    const targetPlusHourSeconds = targetSeconds + 3600;
     
-    // Calculate conflict times (times when goal or 2x notifications will fire)
-    // 충돌 시점 계산 (목표 달성 또는 2x 알림이 발생할 시점)
+    // Calculate conflict times (times when goal or target+1hr notifications will fire)
+    // 충돌 시점 계산 (목표 달성 또는 target+1시간 알림이 발생할 시점)
     const conflictTimes = new Set<number>();
     conflictTimes.add(targetSeconds); // Always skip goal achievement time
-    conflictTimes.add(doubleTargetSeconds); // Always skip 2x goal time
+    conflictTimes.add(targetPlusHourSeconds); // Skip target + 1 hour time
     
     // Schedule check-ins at 30-minute intervals, skipping conflict times
     // 30분 간격으로 체크인 알림 스케줄, 충돌 시점은 스킵
-    const maxDuration = Math.max(doubleTargetSeconds + 3600, 7200); // Continue for at least 2 hours
+    const maxDuration = Math.max(targetPlusHourSeconds + 1800, 7200); // Continue for at least 2 hours
     
     for (let checkInTime = 1800; checkInTime <= maxDuration; checkInTime += 1800) {
-      // Skip if this time conflicts with goal or 2x notifications
+      // Skip if this time conflicts with goal or target+1hr notifications
       if (conflictTimes.has(checkInTime)) {
-        console.log(`Skipping check-in at ${checkInTime}s to avoid conflict with goal/2x notification`);
+        console.log(`Skipping check-in at ${checkInTime}s to avoid conflict with goal/target+1hr notification`);
         continue;
       }
       
@@ -278,12 +278,12 @@ class NotificationService {
   }
 
   /**
-   * Schedule a notification at 2x target time
+   * Schedule a notification at target + 1 hour
    * @param activityName Name of the activity
    * @param targetMinutes Original target time in minutes
    * @returns Notification ID or null if no permission
    */
-  async scheduleDoubleTargetNotification(
+  async scheduleTargetPlusOneHourNotification(
     activityName: string,
     targetMinutes: number
   ): Promise<string | null> {
@@ -292,21 +292,21 @@ class NotificationService {
       return null;
     }
 
-    const doubleMinutes = targetMinutes * 2;
+    const totalMinutes = targetMinutes + 60;
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Zen Tracker',
-        body: `You've been focusing on ${activityName} for ${doubleMinutes} minutes - 2x your goal`,
+        body: `You've been focusing on ${activityName} for ${totalMinutes} minutes - an hour past your goal!`,
         sound: true,
         badge: 1,
         data: { 
-          type: 'double_target',
+          type: 'target_plus_hour',
           activityName,
-          targetMinutes: doubleMinutes
+          totalMinutes
         },
       },
       trigger: {
-        seconds: doubleMinutes * 60,
+        seconds: totalMinutes * 60,
       },
     });
 

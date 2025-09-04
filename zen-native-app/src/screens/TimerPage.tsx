@@ -43,11 +43,9 @@ export default function TimerPage() {
     requestPermission,
     showPermissionDeniedAlert,
     scheduleGoalNotification,
-    scheduleCheckInReminder,
-    scheduleSmartCheckInReminders,  // 스마트 체크인 리마인더 추가
     scheduleCompletionNotification,
     scheduleHourlyNotification,
-    scheduleDoubleTargetNotification,
+    scheduleTargetPlusOneHourNotification,
     scheduleDailyReminder,         // 일일 리마인더 스케줄링 함수 추가
     isDailyReminderScheduled,      // 일일 리마인더 상태 확인 함수 추가
     cancelNotification,
@@ -63,13 +61,11 @@ export default function TimerPage() {
   const [targetMinutes, setTargetMinutes] = useState(activity?.lastTargetMinutes || 0)
   const [showTargetPicker, setShowTargetPicker] = useState(true)
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false)
-  const [checkInNotificationId, setCheckInNotificationId] = useState<string | null>(null)
-  const [checkInNotificationIds, setCheckInNotificationIds] = useState<string[]>([])  // 스마트 체크인용 배열
   const [goalNotificationId, setGoalNotificationId] = useState<string | null>(null)
   const [hourlyNotificationId, setHourlyNotificationId] = useState<string | null>(null)
-  const [doubleTargetNotificationId, setDoubleTargetNotificationId] = useState<string | null>(null)
+  const [targetPlusHourNotificationId, setTargetPlusHourNotificationId] = useState<string | null>(null)
   const [hasNotifiedGoal, setHasNotifiedGoal] = useState(false)
-  const [hasNotifiedDouble, setHasNotifiedDouble] = useState(false)
+  const [hasNotifiedTargetPlusHour, setHasNotifiedTargetPlusHour] = useState(false)
   const [liveActivityId, setLiveActivityId] = useState<string | null>(null)
   
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -117,9 +113,9 @@ export default function TimerPage() {
               setHasNotifiedGoal(true)
             }
             
-            // Mark double target as notified when reached
-            if (elapsed >= targetSeconds * 2 && !hasNotifiedDouble) {
-              setHasNotifiedDouble(true)
+            // Mark target+1hr as notified when reached
+            if (elapsed >= targetSeconds + 3600 && !hasNotifiedTargetPlusHour) {
+              setHasNotifiedTargetPlusHour(true)
             }
           }
         }
@@ -190,7 +186,7 @@ export default function TimerPage() {
     pausedDurationRef.current = 0
     completionDotAnim.setValue(0) // Reset completion dot
     setHasNotifiedGoal(false) // Reset goal notification flag
-    setHasNotifiedDouble(false) // Reset double target notification flag
+    setHasNotifiedTargetPlusHour(false) // Reset target+1hr notification flag
     setIsRunning(true)
     setShowTargetPicker(false)
     
@@ -203,17 +199,9 @@ export default function TimerPage() {
         const goalId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
         setGoalNotificationId(goalId)
         
-        // Schedule 2x target notification
-        const doubleId = await scheduleDoubleTargetNotification(activity.name, targetMinutes)
-        setDoubleTargetNotificationId(doubleId)
-        
-        // Schedule smart check-in reminders that avoid conflicts with goal/2x notifications
-        // 목표/2x 알림과 충돌을 피하는 스마트 체크인 리마인더 스케줄
-        if (targetSeconds >= 1800) {
-          const checkInIds = await scheduleSmartCheckInReminders(activity.name, targetSeconds)
-          setCheckInNotificationIds(checkInIds)
-          console.log(`Scheduled ${checkInIds.length} smart check-in reminders`)
-        }
+        // Schedule target + 1 hour notification
+        const targetPlusHourId = await scheduleTargetPlusOneHourNotification(activity.name, targetMinutes)
+        setTargetPlusHourNotificationId(targetPlusHourId)
       } else {
         // Infinity mode (00:00): schedule hourly notifications
         const hourlyId = await scheduleHourlyNotification(activity.name)
@@ -240,14 +228,6 @@ export default function TimerPage() {
     // Cancel all scheduled notifications when pausing
     console.log('⏸️ Cancelling notifications on pause')
     
-    // Cancel smart check-in notifications
-    if (checkInNotificationIds.length > 0) {
-      for (const id of checkInNotificationIds) {
-        await cancelNotification(id)
-      }
-      // Don't clear the array, we'll need to know which ones to reschedule
-    }
-    
     // Cancel hourly notification
     if (hourlyNotificationId) {
       await cancelNotification(hourlyNotificationId)
@@ -260,9 +240,9 @@ export default function TimerPage() {
       // Don't clear, will reschedule on resume
     }
     
-    // Cancel double target notification if not yet achieved
-    if (doubleTargetNotificationId && !hasNotifiedDouble) {
-      await cancelNotification(doubleTargetNotificationId)
+    // Cancel target+1hr notification if not yet achieved
+    if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour) {
+      await cancelNotification(targetPlusHourNotificationId)
       // Don't clear, will reschedule on resume
     }
     
@@ -303,43 +283,21 @@ export default function TimerPage() {
         }
       }
       
-      // Reschedule double target notification if not yet achieved
-      if (doubleTargetNotificationId && !hasNotifiedDouble && targetSeconds > 0) {
-        const doubleTarget = targetSeconds * 2
-        const remainingToDouble = doubleTarget - currentElapsed
-        if (remainingToDouble > 0) {
-          const newDoubleId = await scheduleNotificationWithDelay(
+      // Reschedule target+1hr notification if not yet achieved
+      if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour && targetSeconds > 0) {
+        const targetPlusHour = targetSeconds + 3600
+        const remainingToTargetPlusHour = targetPlusHour - currentElapsed
+        if (remainingToTargetPlusHour > 0) {
+          const targetMinutes = Math.floor(targetSeconds / 60)
+          const totalMinutes = targetMinutes + 60
+          const newTargetPlusHourId = await scheduleNotificationWithDelay(
             'Zen Tracker',
-            `Amazing! You've doubled your goal for ${activity.name}! 🌟`,
-            remainingToDouble,
-            { type: 'double_target', activityName: activity.name }
+            `You've been focusing on ${activity.name} for ${totalMinutes} minutes - an hour past your goal!`,
+            remainingToTargetPlusHour,
+            { type: 'target_plus_hour', activityName: activity.name }
           )
-          setDoubleTargetNotificationId(newDoubleId)
+          setTargetPlusHourNotificationId(newTargetPlusHourId)
         }
-      }
-      
-      // Reschedule smart check-in notifications
-      if (checkInNotificationIds.length > 0 && targetSeconds > 0) {
-        const checkInTimes = [
-          Math.floor(targetSeconds * 0.25), // 25%
-          Math.floor(targetSeconds * 0.5),  // 50%
-          Math.floor(targetSeconds * 0.75), // 75%
-        ]
-        
-        const newCheckInIds: string[] = []
-        for (const checkInTime of checkInTimes) {
-          if (checkInTime > currentElapsed) {
-            const remainingToCheckIn = checkInTime - currentElapsed
-            const id = await scheduleNotificationWithDelay(
-              'Zen Tracker',
-              `Check-in: ${Math.floor((checkInTime / targetSeconds) * 100)}% of your ${activity.name} goal`,
-              remainingToCheckIn,
-              { type: 'smart_checkin', activityName: activity.name }
-            )
-            if (id) newCheckInIds.push(id)
-          }
-        }
-        setCheckInNotificationIds(newCheckInIds)
       }
       
       // Reschedule hourly notification for infinity mode
@@ -391,10 +349,10 @@ export default function TimerPage() {
       setGoalNotificationId(null)
     }
     
-    if (doubleTargetNotificationId && !hasNotifiedDouble) {
-      // Cancel double target notification if not yet achieved
-      await cancelNotification(doubleTargetNotificationId)
-      setDoubleTargetNotificationId(null)
+    if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour) {
+      // Cancel target+1hr notification if not yet achieved
+      await cancelNotification(targetPlusHourNotificationId)
+      setTargetPlusHourNotificationId(null)
     }
     
     // Send completion notification - TEMPORARILY DISABLED
