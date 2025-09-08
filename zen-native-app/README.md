@@ -1,5 +1,62 @@
 # Zen App - React Native Version
 
+## 🏗️ 프로젝트 구조
+### 모듈화된 Feature 기반 아키텍처
+
+```
+src/
+├── features/              # 기능별 모듈
+│   ├── timer/             # ⏱️ 타이머 기능
+│   │   ├── components/    # TimerDisplay, TimerControls
+│   │   ├── hooks/         # useTimer
+│   │   ├── utils/         # 타이머 관련 유틸리티
+│   │   └── types/         # 타이머 관련 타입 정의
+│   │
+│   ├── activities/        # 📝 활동 관리
+│   │   ├── components/    # ActivityList, ActivityItem
+│   │   ├── hooks/         # useActivityManager
+│   │   └── types/         # 활동 관련 타입
+│   │
+│   ├── reports/           # 📊 리포트 & 통계
+│   │   ├── components/    # StatisticsCard, DateRangePicker
+│   │   ├── hooks/         # useReportData
+│   │   └── utils/         # 데이터 집계 유틸리티
+│   │
+│   └── onboarding/        # 🚀 온보딩
+│       └── components/    # OnboardingTutorial
+│
+├── shared/                # 공유 모듈
+│   ├── ui/               # 공통 UI 컴포넌트 (Button, Modal 등)
+│   ├── hooks/            # 공통 훅
+│   ├── utils/            # 공통 유틸리티 (time.ts 등)
+│   ├── constants/        # 상수 정의 (colors.ts 등)
+│   └── types/            # 공통 타입 정의
+│
+├── screens/              # 화면 컴포넌트 (각 feature 조합)
+│   ├── HomePage.tsx
+│   ├── TimerPage.tsx
+│   ├── ReportPage.tsx
+│   └── OnboardingPage.tsx
+│
+├── services/             # 외부 서비스 연동
+│   ├── notifications/    # 알림 서비스
+│   ├── dataTransfer/     # 데이터 전송
+│   └── BackgroundTimer.ts
+│
+└── store/                # 상태 관리 (Zustand)
+    └── store.ts
+```
+
+## 👥 협업 가이드
+
+### 담당 영역 분리
+각 개발자는 독립적인 feature 모듈을 담당할 수 있습니다:
+
+- **Developer A**: Timer Feature (`src/features/timer/`)
+- **Developer B**: Activities Feature (`src/features/activities/`)
+- **Developer C**: Reports Feature (`src/features/reports/`)
+- **Developer D**: Shared Components & Services (`src/shared/`, `src/services/`)
+
 ## 📱 테스트 방법
 
 ### 1. Expo를 사용한 빠른 테스트 (권장)

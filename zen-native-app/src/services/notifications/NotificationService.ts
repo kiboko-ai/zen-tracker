@@ -314,6 +314,88 @@ class NotificationService {
   }
 
   /**
+   * Schedule a 2x target achievement notification
+   * @param activityName Name of the activity
+   * @param targetMinutes Original target time in minutes
+   * @returns Notification ID or null if no permission
+   */
+  async scheduleTwoXTargetNotification(
+    activityName: string,
+    targetMinutes: number
+  ): Promise<string | null> {
+    if (!this.hasPermission) {
+      console.log('No notification permission');
+      return null;
+    }
+
+    const twoXMinutes = targetMinutes * 2;
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Zen Tracker',
+        body: `Amazing! You've reached 2x your goal - ${twoXMinutes} minutes of ${activityName}! 🎯`,
+        sound: true,
+        badge: 1,
+        data: { 
+          type: 'two_x_target',
+          activityName,
+          totalMinutes: twoXMinutes
+        },
+      },
+      trigger: {
+        seconds: twoXMinutes * 60,
+      },
+    });
+
+    return notificationId;
+  }
+
+  /**
+   * Schedule 30-minute interval notifications after a certain point
+   * @param activityName Name of the activity
+   * @param startAfterMinutes Start notifications after this many minutes
+   * @param count Number of notifications to schedule
+   * @returns Array of notification IDs
+   */
+  async scheduleThirtyMinuteIntervals(
+    activityName: string,
+    startAfterMinutes: number,
+    count: number = 10
+  ): Promise<string[]> {
+    if (!this.hasPermission) {
+      console.log('No notification permission');
+      return [];
+    }
+
+    const notificationIds: string[] = [];
+    
+    for (let i = 1; i <= count; i++) {
+      const totalMinutes = startAfterMinutes + (i * 30);
+      try {
+        const notificationId = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'Zen Tracker',
+            body: `You've been focusing on ${activityName} for ${totalMinutes} minutes.`,
+            sound: true,
+            data: { 
+              type: 'thirty_minute_interval',
+              activityName,
+              totalMinutes
+            },
+          },
+          trigger: {
+            seconds: totalMinutes * 60,
+          },
+        });
+        notificationIds.push(notificationId);
+      } catch (error) {
+        console.error(`Failed to schedule 30-min interval at ${totalMinutes}min:`, error);
+      }
+    }
+
+    return notificationIds;
+  }
+
+  /**
    * Schedule a session completion notification
    * @param activityName Name of the activity
    * @param totalMinutes Total session time in minutes
