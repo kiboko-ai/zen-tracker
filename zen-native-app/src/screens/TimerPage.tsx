@@ -15,6 +15,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { Picker } from '@react-native-picker/picker'
 import WheelPicker from 'react-native-wheely'
+import Svg, { Circle } from 'react-native-svg'
 import { format } from 'date-fns'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
@@ -24,6 +25,7 @@ import AnalyticsService from '../services/AnalyticsService'
 import { TimerDisplay, TimerControls } from '../features/timer/components'
 import { useTimer } from '../features/timer/hooks/useTimer'
 import { formatTime, formatDuration } from '../shared/utils/time'
+import BackgroundTimer from '../services/BackgroundTimer'
 
 type TimerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Timer'>
 type TimerScreenRouteProp = RouteProp<RootStackParamList, 'Timer'>
@@ -79,6 +81,8 @@ export default function TimerPage() {
   const [hasNotifiedGoal, setHasNotifiedGoal] = useState(false)
   const [hasNotifiedTargetPlusHour, setHasNotifiedTargetPlusHour] = useState(false)
   const [liveActivityId, setLiveActivityId] = useState<string | null>(null)
+  const [checkInNotificationId, setCheckInNotificationId] = useState<string | null>(null)
+  const [checkInNotificationIds, setCheckInNotificationIds] = useState<string[]>([])
   
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
@@ -564,28 +568,44 @@ export default function TimerPage() {
             ]}
           >
             <View style={styles.progressContainer}>
-              <AnimatedCircularProgress
-                size={width * 0.6}
-                width={8}
-                fill={progress}
-                tintColor="#000"
-                backgroundColor="#f3f4f6"
-                rotation={0}
-                lineCap="round"
-              >
-                {() => (
-                  <View style={styles.timerContent}>
-                    <Text style={[styles.timeText, seconds >= 3600 && styles.timeTextSmall]}>
-                      {formatTimeDisplay(seconds)}
+              <View style={styles.circularProgressContainer}>
+                <Svg
+                  width={width * 0.6}
+                  height={width * 0.6}
+                  style={styles.progressSvg}
+                >
+                  <Circle
+                    cx={width * 0.3}
+                    cy={width * 0.3}
+                    r={(width * 0.6 - 16) / 2}
+                    stroke="#f3f4f6"
+                    strokeWidth={8}
+                    fill="none"
+                  />
+                  <Circle
+                    cx={width * 0.3}
+                    cy={width * 0.3}
+                    r={(width * 0.6 - 16) / 2}
+                    stroke="#000"
+                    strokeWidth={8}
+                    fill="none"
+                    strokeDasharray={`${Math.PI * (width * 0.6 - 16)}`}
+                    strokeDashoffset={`${Math.PI * (width * 0.6 - 16) * (1 - progress / 100)}`}
+                    strokeLinecap="round"
+                    transform={`rotate(-90 ${width * 0.3} ${width * 0.3})`}
+                  />
+                </Svg>
+                <View style={styles.timerContent}>
+                  <Text style={[styles.timeText, seconds >= 3600 && styles.timeTextSmall]}>
+                    {formatTimeDisplay(seconds)}
+                  </Text>
+                  {targetSeconds > 0 && (
+                    <Text style={styles.targetText}>
+                      Target: {formatTime(targetSeconds)}
                     </Text>
-                    {targetSeconds > 0 && (
-                      <Text style={styles.targetText}>
-                        Target: {formatTime(targetSeconds)}
-                      </Text>
-                    )}
-                  </View>
-                )}
-              </AnimatedCircularProgress>
+                  )}
+                </View>
+              </View>
               {isGoalReached && (
                 <Animated.View 
                   style={[
@@ -775,8 +795,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  timerContent: {
+  circularProgressContainer: {
+    position: 'relative',
+    width: width * 0.6,
+    height: width * 0.6,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressSvg: {
+    position: 'absolute',
+  },
+  timerContent: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
   },
   timeText: {
     fontSize: 48,
