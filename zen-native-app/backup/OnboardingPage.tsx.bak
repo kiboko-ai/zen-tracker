@@ -13,7 +13,6 @@ import { useNavigation } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
-import AnalyticsService from '../services/AnalyticsService'
 
 type OnboardingScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Onboarding'>
 
@@ -25,29 +24,17 @@ export default function OnboardingPage() {
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [customActivity, setCustomActivity] = useState('')
 
-  // Log onboarding enter when component mounts
-  React.useEffect(() => {
-    AnalyticsService.logOnboardingEnter()
-  }, [])
-
   const handleToggleActivity = (activity: string) => {
     if (selectedItems.includes(activity)) {
       setSelectedItems(selectedItems.filter(item => item !== activity))
     } else {
       setSelectedItems([...selectedItems, activity])
-      // Log preset activity selection
-      if (defaultActivities.includes(activity)) {
-        AnalyticsService.logWelcomeSelectPresetActivity(activity)
-      }
     }
   }
 
   const handleAddCustom = () => {
     if (customActivity.trim()) {
-      const activityName = customActivity.trim()
-      handleToggleActivity(activityName)
-      // Log custom activity addition
-      AnalyticsService.logWelcomeAddCustomActivity(activityName)
+      handleToggleActivity(customActivity.trim())
       setCustomActivity('')
     }
   }
@@ -57,9 +44,6 @@ export default function OnboardingPage() {
       Alert.alert('Select Activities', 'Please select at least one activity to continue.')
       return
     }
-
-    // Log welcome continue event
-    AnalyticsService.logWelcomeContinue(selectedItems)
 
     selectedItems.forEach(activity => {
       addActivity(activity)

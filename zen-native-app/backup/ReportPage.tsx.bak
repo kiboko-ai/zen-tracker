@@ -23,7 +23,6 @@ import { ExportService } from '../services/dataTransfer/ExportService'
 import { ImportService } from '../services/dataTransfer/ImportService'
 import * as DocumentPicker from 'expo-document-picker'
 import RNFS from 'react-native-fs'
-import AnalyticsService from '../services/AnalyticsService'
 
 type TabType = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
@@ -32,40 +31,15 @@ const { width } = Dimensions.get('window')
 export default function ReportPage() {
   const navigation = useNavigation()
   const store = useStore()
-  const { sessions, activities, currentSession, isFirstTime, selectedActivities, removeSession } = store
+  const { sessions, activities, currentSession, isFirstTime, selectedActivities } = store
   const [activeTab, setActiveTab] = useState<TabType>('daily')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [chartView, setChartView] = useState<'timeline' | 'rings'>('timeline')
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
-  const [showMenu, setShowMenu] = useState(false)
-  
-  // Log report page enter when component mounts
-  React.useEffect(() => {
-    AnalyticsService.logReportPageEnter()
-  }, [])
   
   const now = selectedDate
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-
-  const handleRemoveSession = (sessionId: string) => {
-    Alert.alert(
-      'Delete Session',
-      'Are you sure you want to delete this session? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive', 
-          onPress: () => removeSession(sessionId) 
-        }
-      ]
-    )
-  }
-
-  const formatSessionTime = (date: Date) => {
-    return format(date, 'HH:mm')
-  }
 
   const getDateRange = (tab: TabType) => {
     switch (tab) {
@@ -86,18 +60,6 @@ export default function ReportPage() {
       isWithinInterval(new Date(session.startTime), range)
     )
   }, [sessions, activeTab, selectedDate])
-
-  const dailySessions = useMemo(() => {
-    const dayStart = startOfDay(selectedDate)
-    const dayEnd = endOfDay(selectedDate)
-    
-    return sessions
-      .filter(session => {
-        const sessionDate = new Date(session.startTime)
-        return isWithinInterval(sessionDate, { start: dayStart, end: dayEnd })
-      })
-      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-  }, [sessions, selectedDate])
 
   const stats = useMemo(() => {
     const totalTime = filteredSessions.reduce((acc, session) => acc + session.duration, 0)
@@ -141,87 +103,94 @@ export default function ReportPage() {
     return `${minutes} min`
   }
 
-  const handleMenuPress = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Import Data', 'Export Data'],
-          cancelButtonIndex: 0,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 1) {
-            Alert.alert(
-              'Import Data',
-              'Import your activities and sessions from a JSON or CSV file. You can choose to replace existing data or merge with it.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Continue', onPress: handleImport }
-              ]
-            )
-          } else if (buttonIndex === 2) {
-            Alert.alert(
-              'Export Data',
-              'Export all your activities and sessions to a JSON file for backup or transfer to another device.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Continue', onPress: handleExport }
-              ]
-            )
-          }
-        }
-      )
-    } else {
-      // For Android, toggle menu visibility
-      setShowMenu(!showMenu)
-    }
-  }
-
   const handleExport = async () => {
     if (isExporting) return
     
-    try {
-      setIsExporting(true)
-      
-      const exportData = ExportService.prepareExportData(
-        activities,
-        sessions,
-        currentSession,
-        isFirstTime,
-        selectedActivities
-      )
-      exportData.deviceInfo.platform = Platform.OS
-      const content = ExportService.exportToJSON(exportData)
-      const fileName = ExportService.generateFileName('json', sessions)
-      
-      // Write file to temporary directory
-      const tempPath = `${RNFS.TemporaryDirectoryPath}/${fileName}`
-      await RNFS.writeFile(tempPath, content, 'utf8')
-        
-      // Share the file
-      const result = await Share.share({
-        url: Platform.OS === 'ios' ? `file://${tempPath}` : tempPath,
-        title: `Export Zen Tracker Data`,
-      }, {
-        subject: fileName,
-        dialogTitle: 'Export Zen Tracker Data',
-      })
-      
-      if (result.action === Share.sharedAction) {
-        console.log('Data exported successfully')
-        // Clean up temp file after a delay
-        setTimeout(() => {
-          RNFS.unlink(tempPath).catch(() => {})
-        }, 5000)
+    const showExportOptions = () => {
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: ['Cancel', 'Export as JSON', 'Export as CSV'],
+            cancelButtonIndex: 0,
+            title: 'Choose Export Format',
+          },
+          async (buttonIndex) => {
+            if (buttonIndex === 1) {
+              await exportData('json')
+            } else if (buttonIndex === 2) {
+              await exportData('csv')
+            }
+          }
+        )
       } else {
-        // Clean up immediately if cancelled
-        RNFS.unlink(tempPath).catch(() => {})
+        Alert.alert(
+          'Choose Export Format',
+          '',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Export as JSON', onPress: () => exportData('json') },
+            { text: 'Export as CSV', onPress: () => exportData('csv') },
+          ],
+          { cancelable: true }
+        )
       }
-    } catch (error) {
-      console.error('Export failed:', error)
-      Alert.alert('Export Failed', 'Unable to export data. Please try again.')
-    } finally {
-      setIsExporting(false)
     }
+
+    const exportData = async (format: 'json' | 'csv') => {
+      try {
+        setIsExporting(true)
+        
+        let content: string
+        let fileName: string
+        
+        if (format === 'json') {
+          const exportData = ExportService.prepareExportData(
+            activities,
+            sessions,
+            currentSession,
+            isFirstTime,
+            selectedActivities
+          )
+          exportData.deviceInfo.platform = Platform.OS
+          content = ExportService.exportToJSON(exportData)
+          fileName = ExportService.generateFileName('json', sessions)
+        } else {
+          content = ExportService.exportToCSV(activities, sessions)
+          fileName = ExportService.generateFileName('csv', sessions)
+        }
+        
+        // Write file to temporary directory
+        const tempPath = `${RNFS.TemporaryDirectoryPath}/${fileName}`
+        await RNFS.writeFile(tempPath, content, 'utf8')
+        
+        // Share the file
+        const result = await Share.share({
+          url: Platform.OS === 'ios' ? `file://${tempPath}` : tempPath,
+          title: `Export Zen Tracker Data`,
+        }, {
+          subject: fileName,
+          dialogTitle: 'Export Zen Tracker Data',
+        })
+        
+        if (result.action === Share.sharedAction) {
+          console.log('Data exported successfully')
+          // Clean up temp file after a delay
+          setTimeout(() => {
+            RNFS.unlink(tempPath).catch(() => {})
+          }, 5000)
+        } else {
+          // Clean up immediately if cancelled
+          RNFS.unlink(tempPath).catch(() => {})
+        }
+      } catch (error) {
+        console.error('Export failed:', error)
+        Alert.alert('Export Failed', 'Unable to export data. Please try again.')
+      } finally {
+        setIsExporting(false)
+      }
+    }
+    
+    showExportOptions()
   }
 
   const handleImport = async () => {
@@ -232,7 +201,7 @@ export default function ReportPage() {
       
       // Open document picker
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/json',
+        type: ['application/json', 'text/csv', 'text/comma-separated-values'],
         copyToCacheDirectory: true,
       })
       
@@ -242,11 +211,43 @@ export default function ReportPage() {
         const response = await fetch(file.uri)
         const content = await response.text()
         
-        // Handle JSON import
-        const showImportModeOptions = () => {
+        // Determine file type
+        const isCSV = file.name?.toLowerCase().endsWith('.csv') || false
+        
+        if (isCSV) {
+          // Handle CSV import
+          const parsed = ImportService.parseCSV(content)
+          if (parsed) {
+            Alert.alert(
+              'Import CSV Data',
+              `Found ${parsed.activities.length} activities. How would you like to import?`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Add to Existing',
+                  onPress: () => {
+                    // Add imported activities
+                    parsed.activities.forEach(activity => {
+                      store.addActivity(activity.name)
+                      const newActivity = activities[0] // Get the newly added activity
+                      if (newActivity) {
+                        store.updateActivity(newActivity.id, { totalTime: activity.totalTime })
+                      }
+                    })
+                    Alert.alert('Success', `Imported ${parsed.activities.length} activities`)
+                  }
+                },
+              ]
+            )
+          } else {
+            Alert.alert('Import Failed', 'Invalid CSV format')
+          }
+        } else {
+          // Handle JSON import
+          const showImportModeOptions = () => {
             Alert.alert(
               'Import Data',
-              'How would you like to import the data?\n\n• Replace All: Delete current data & replace with imported\n• Merge: Combine with existing data\n• Add as New: Keep all data separate',
+              'How would you like to import the data?',
               [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -285,9 +286,10 @@ export default function ReportPage() {
             } else {
               Alert.alert('Import Failed', result.error || 'Unknown error occurred')
             }
+          }
+          
+          showImportModeOptions()
         }
-        
-        showImportModeOptions()
       }
     } catch (error) {
       console.error('Import failed:', error)
@@ -458,7 +460,7 @@ export default function ReportPage() {
   }
 
   return (
-    <SafeAreaView style={styles.container} onTouchStart={() => showMenu && setShowMenu(false)}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => (navigation as any).navigate('Home')}
@@ -467,50 +469,28 @@ export default function ReportPage() {
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Report</Text>
-        <TouchableOpacity
-          onPress={handleMenuPress}
-          style={styles.menuButton}
-        >
-          <Text style={styles.menuButtonText}>⋮</Text>
-        </TouchableOpacity>
-        
-        {/* Android dropdown menu */}
-        {Platform.OS === 'android' && showMenu && (
-          <View style={styles.dropdownMenu}>
-            <TouchableOpacity
-              onPress={() => {
-                setShowMenu(false)
-                Alert.alert(
-                  'Import Data',
-                  'Import your activities and sessions from a JSON or CSV file. You can choose to replace existing data or merge with it.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Continue', onPress: handleImport }
-                  ]
-                )
-              }}
-              style={styles.dropdownItem}
-            >
-              <Text style={styles.dropdownItemText}>Import Data</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                setShowMenu(false)
-                Alert.alert(
-                  'Export Data',
-                  'Export all your activities and sessions to a JSON file for backup or transfer to another device.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Continue', onPress: handleExport }
-                  ]
-                )
-              }}
-              style={styles.dropdownItem}
-            >
-              <Text style={styles.dropdownItemText}>Export Data</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            onPress={handleImport}
+            style={styles.headerButton}
+            disabled={isImporting}
+          >
+            <View style={styles.buttonContent}>
+              <Text style={[styles.headerButtonText, isImporting && styles.headerButtonDisabled]}>📂</Text>
+              <Text style={[styles.buttonLabel, isImporting && styles.headerButtonDisabled]}>import</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleExport}
+            style={styles.headerButton}
+            disabled={isExporting}
+          >
+            <View style={styles.buttonContent}>
+              <Text style={[styles.headerButtonText, isExporting && styles.headerButtonDisabled]}>💾</Text>
+              <Text style={[styles.buttonLabel, isExporting && styles.headerButtonDisabled]}>export</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.tabContainer}>
@@ -777,34 +757,6 @@ export default function ReportPage() {
             )}
           </View>
         )}
-
-        {activeTab === 'daily' && dailySessions.length > 0 && (
-          <View style={styles.sessionsSection}>
-            <Text style={styles.sessionsTitle}>Session Details</Text>
-            {dailySessions.map((session) => {
-              const activity = activities.find(a => a.id === session.activityId)
-              return (
-                <View key={session.id} style={styles.sessionCard}>
-                  <View style={styles.sessionInfo}>
-                    <Text style={styles.sessionActivity}>{activity?.name || 'Unknown'}</Text>
-                    <Text style={styles.sessionTime}>
-                      {formatSessionTime(new Date(session.startTime))} - {session.endTime ? formatSessionTime(new Date(session.endTime)) : 'In Progress'}
-                    </Text>
-                    <Text style={styles.sessionDuration}>
-                      Duration: {formatDuration(session.duration)}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveSession(session.id)}
-                    style={styles.sessionDeleteButton}
-                  >
-                    <Text style={styles.sessionDeleteText}>×</Text>
-                  </TouchableOpacity>
-                </View>
-              )
-            })}
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   )
@@ -838,43 +790,6 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     flex: 1,
-  },
-  menuButton: {
-    flex: 1,
-    alignItems: 'flex-end',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  menuButtonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: 50,
-    right: 24,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    zIndex: 1000,
-  },
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minWidth: 150,
-  },
-  dropdownItemText: {
-    fontSize: 16,
-    color: '#000',
   },
   headerButtons: {
     flex: 1,
@@ -1112,60 +1027,5 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     minWidth: 30,
     textAlign: 'right',
-  },
-  sessionsSection: {
-    marginTop: 24,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  sessionsTitle: {
-    fontSize: 18,
-    fontWeight: '400',
-    marginBottom: 16,
-    color: '#000',
-  },
-  sessionCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sessionInfo: {
-    flex: 1,
-  },
-  sessionActivity: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000',
-    marginBottom: 4,
-  },
-  sessionTime: {
-    fontSize: 14,
-    fontWeight: '300',
-    color: '#6B7280',
-    marginBottom: 2,
-  },
-  sessionDuration: {
-    fontSize: 12,
-    fontWeight: '300',
-    color: '#9CA3AF',
-  },
-  sessionDeleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  sessionDeleteText: {
-    fontSize: 20,
-    fontWeight: '300',
-    color: '#6B7280',
-    lineHeight: 20,
   },
 })
