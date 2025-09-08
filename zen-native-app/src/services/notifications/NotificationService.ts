@@ -44,8 +44,53 @@ class NotificationService {
       }),
     });
 
+    // Setup Android notification channels
+    if (Platform.OS === 'android') {
+      await this.setupAndroidChannels();
+    }
+
     const { status } = await Notifications.getPermissionsAsync();
     this.hasPermission = status === 'granted';
+  }
+
+  /**
+   * Setup Android notification channels
+   * Android 8.0+ requires notification channels
+   */
+  private async setupAndroidChannels(): Promise<void> {
+    if (Platform.OS !== 'android') return;
+
+    // Main channel for timer notifications
+    await Notifications.setNotificationChannelAsync('timer-notifications', {
+      name: 'Timer Notifications',
+      description: 'Notifications for timer goals and milestones',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+      sound: 'default',
+      enableVibrate: true,
+      enableLights: true,
+      showBadge: true,
+    });
+
+    // Channel for daily reminders
+    await Notifications.setNotificationChannelAsync('daily-reminders', {
+      name: 'Daily Reminders',
+      description: 'Daily app usage reminders',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: 'default',
+      showBadge: true,
+    });
+
+    // Channel for interval notifications
+    await Notifications.setNotificationChannelAsync('interval-notifications', {
+      name: 'Progress Updates',
+      description: '30-minute interval progress notifications',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: 'default',
+      enableVibrate: true,
+      showBadge: false,
+    });
   }
 
   /**
@@ -64,17 +109,35 @@ class NotificationService {
       return true;
     }
 
-    const { status } = await Notifications.requestPermissionsAsync({
-      ios: {
-        allowAlert: true,
-        allowBadge: true,
-        allowSound: true,
-        allowAnnouncements: true,
-        allowCriticalAlerts: false,
-        provideAppNotificationSettings: false,
-        allowProvisional: false,
-      },
-    });
+    // Request permissions based on platform
+    let permissionRequest: any = {};
+    
+    if (Platform.OS === 'ios') {
+      permissionRequest = {
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+          allowAnnouncements: true,
+          allowCriticalAlerts: false,
+          provideAppNotificationSettings: false,
+          allowProvisional: false,
+        },
+      };
+    } else if (Platform.OS === 'android') {
+      // Android 13+ requires explicit POST_NOTIFICATIONS permission
+      permissionRequest = {
+        android: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+          priority: 'high',
+          vibrate: true,
+        },
+      };
+    }
+
+    const { status } = await Notifications.requestPermissionsAsync(permissionRequest);
     this.hasPermission = status === 'granted';
     
     // Set notification handler for foreground notifications
@@ -86,6 +149,11 @@ class NotificationService {
           shouldSetBadge: true,
         }),
       });
+      
+      // Re-setup Android channels after permission granted
+      if (Platform.OS === 'android') {
+        await this.setupAndroidChannels();
+      }
     }
     
     return this.hasPermission;
@@ -468,11 +536,13 @@ class NotificationService {
             hour: 9,
             minute: 0
           },
+          categoryIdentifier: 'daily-reminders',
         },
         trigger: {
           hour: 9,      // 오전 9시 (24시간 형식)
           minute: 0,    // 정각
-          repeats: true // 매일 반복
+          repeats: true, // 매일 반복
+          channelId: 'daily-reminders',
         },
       });
 
@@ -569,15 +639,29 @@ class NotificationService {
     }
 
     try {
+      // Determine channel based on notification type
+      let channelId = 'timer-notifications';
+      let categoryIdentifier = 'timer-notifications';
+      
+      if (data?.type === 'thirty_minute_interval' || data?.type === 'hourly_check') {
+        channelId = 'interval-notifications';
+        categoryIdentifier = 'interval-notifications';
+      } else if (data?.type === 'daily_reminder') {
+        channelId = 'daily-reminders';
+        categoryIdentifier = 'daily-reminders';
+      }
+      
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
           title,
           body,
           sound: true,
           data: data || {},
+          categoryIdentifier,
         },
         trigger: {
           seconds: delaySeconds,
+          channelId,
         },
       });
 
