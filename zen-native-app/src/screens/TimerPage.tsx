@@ -59,6 +59,8 @@ export default function TimerPage() {
     scheduleCompletionNotification,
     scheduleHourlyNotification,
     scheduleTargetPlusOneHourNotification,
+    scheduleTwoXTargetNotification,
+    scheduleThirtyMinuteIntervals,
     scheduleDailyReminder,         // 일일 리마인더 스케줄링 함수 추가
     isDailyReminderScheduled,      // 일일 리마인더 상태 확인 함수 추가
     cancelDailyReminder,           // 일일 리마인더 취소 함수 추가
@@ -78,8 +80,11 @@ export default function TimerPage() {
   const [goalNotificationId, setGoalNotificationId] = useState<string | null>(null)
   const [hourlyNotificationId, setHourlyNotificationId] = useState<string | null>(null)
   const [targetPlusHourNotificationId, setTargetPlusHourNotificationId] = useState<string | null>(null)
+  const [twoXTargetNotificationId, setTwoXTargetNotificationId] = useState<string | null>(null)
+  const [thirtyMinIntervalIds, setThirtyMinIntervalIds] = useState<string[]>([])
   const [hasNotifiedGoal, setHasNotifiedGoal] = useState(false)
   const [hasNotifiedTargetPlusHour, setHasNotifiedTargetPlusHour] = useState(false)
+  const [hasNotifiedTwoXTarget, setHasNotifiedTwoXTarget] = useState(false)
   const [liveActivityId, setLiveActivityId] = useState<string | null>(null)
   const [checkInNotificationId, setCheckInNotificationId] = useState<string | null>(null)
   const [checkInNotificationIds, setCheckInNotificationIds] = useState<string[]>([])
@@ -129,6 +134,11 @@ export default function TimerPage() {
               setHasNotifiedGoal(true)
             }
             
+            // Mark 2x target as notified when reached
+            if (elapsed >= targetSeconds * 2 && !hasNotifiedTwoXTarget) {
+              setHasNotifiedTwoXTarget(true)
+            }
+            
             // Mark target+1hr as notified when reached
             if (elapsed >= targetSeconds + 3600 && !hasNotifiedTargetPlusHour) {
               setHasNotifiedTargetPlusHour(true)
@@ -151,7 +161,7 @@ export default function TimerPage() {
         intervalRef.current = null
       }
     }
-  }, [isRunning, isPaused, targetSeconds, completionDotAnim, liveActivityId, hasNotifiedGoal, hasNotifiedTargetPlusHour])
+  }, [isRunning, isPaused, targetSeconds, completionDotAnim, liveActivityId, hasNotifiedGoal, hasNotifiedTargetPlusHour, hasNotifiedTwoXTarget])
 
 
   useEffect(() => {
@@ -202,6 +212,7 @@ export default function TimerPage() {
     pausedDurationRef.current = 0
     completionDotAnim.setValue(0) // Reset completion dot
     setHasNotifiedGoal(false) // Reset goal notification flag
+    setHasNotifiedTwoXTarget(false) // Reset 2x target notification flag
     setHasNotifiedTargetPlusHour(false) // Reset target+1hr notification flag
     setIsRunning(true)
     setShowTargetPicker(false)
@@ -226,20 +237,42 @@ export default function TimerPage() {
     
     if (activity && hasPermission) {
       if (targetSeconds > 0) {
-        // Has target time: schedule goal and 2x notifications
         const targetMinutes = Math.floor(targetSeconds / 60)
         
-        // Schedule goal achievement notification (after target seconds)
+        // Case 1: 목표달성 Push
         const goalId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
         setGoalNotificationId(goalId)
         
-        // Schedule target + 1 hour notification
-        const targetPlusHourId = await scheduleTargetPlusOneHourNotification(activity.name, targetMinutes)
-        setTargetPlusHourNotificationId(targetPlusHourId)
+        // Case 3: 2x 목표달성 Push
+        const twoXId = await scheduleTwoXTargetNotification(activity.name, targetMinutes)
+        setTwoXTargetNotificationId(twoXId)
+        
+        // Case 2 & 4: 30분 간격 Push 스케줄링
+        // 특별한 경우: 15, 45, 75분 등 (15 + 30*n)
+        const is15PlusMultiple30 = targetMinutes === 15 || (targetMinutes > 15 && (targetMinutes - 15) % 30 === 0)
+        
+        if (is15PlusMultiple30) {
+          // Case 4: 2x 이후부터 30분 간격
+          const startAfter = targetMinutes * 2 // 2x 목표 이후부터 시작
+          const intervalIds = await scheduleThirtyMinuteIntervals(activity.name, startAfter, 10)
+          setThirtyMinIntervalIds(intervalIds)
+        } else if (targetMinutes >= 30) {
+          // Case 2: 설정시간이 30분 이상이면 30분 초과 시점부터 30분 간격
+          const firstInterval = Math.ceil(targetMinutes / 30) * 30 // 다음 30분 배수
+          if (firstInterval > targetMinutes) {
+            // 첫 30분 간격 알림부터 시작 (목표 시간과 겹치지 않도록)
+            const intervalIds = await scheduleThirtyMinuteIntervals(activity.name, firstInterval - 30, 10)
+            setThirtyMinIntervalIds(intervalIds)
+          }
+        } else {
+          // 30분 미만 목표: 30분, 60분, 90분... 알림
+          const intervalIds = await scheduleThirtyMinuteIntervals(activity.name, 0, 10)
+          setThirtyMinIntervalIds(intervalIds)
+        }
       } else {
-        // Infinity mode (00:00): schedule hourly notifications
-        const hourlyId = await scheduleHourlyNotification(activity.name)
-        setHourlyNotificationId(hourlyId)
+        // Infinity mode (00:00): 30분 간격 알림
+        const intervalIds = await scheduleThirtyMinuteIntervals(activity.name, 0, 20)
+        setThirtyMinIntervalIds(intervalIds)
       }
     }
     
@@ -277,6 +310,20 @@ export default function TimerPage() {
     // Cancel target+1hr notification if not yet achieved
     if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour) {
       await cancelNotification(targetPlusHourNotificationId)
+      // Don't clear, will reschedule on resume
+    }
+    
+    // Cancel 2x target notification if not yet achieved
+    if (twoXTargetNotificationId && !hasNotifiedTwoXTarget) {
+      await cancelNotification(twoXTargetNotificationId)
+      // Don't clear, will reschedule on resume
+    }
+    
+    // Cancel 30-minute interval notifications
+    if (thirtyMinIntervalIds.length > 0) {
+      for (const id of thirtyMinIntervalIds) {
+        await cancelNotification(id)
+      }
       // Don't clear, will reschedule on resume
     }
     
@@ -332,6 +379,48 @@ export default function TimerPage() {
           )
           setTargetPlusHourNotificationId(newTargetPlusHourId)
         }
+      }
+      
+      // Reschedule 2x target notification if not yet achieved
+      if (twoXTargetNotificationId && !hasNotifiedTwoXTarget && targetSeconds > 0) {
+        const twoXTarget = targetSeconds * 2
+        const remainingToTwoXTarget = twoXTarget - currentElapsed
+        if (remainingToTwoXTarget > 0) {
+          const targetMinutes = Math.floor(targetSeconds / 60)
+          const twoXMinutes = targetMinutes * 2
+          const newTwoXId = await scheduleNotificationWithDelay(
+            'Zen Tracker',
+            `Amazing! You've reached 2x your goal - ${twoXMinutes} minutes of ${activity.name}! 🎯`,
+            remainingToTwoXTarget,
+            { type: 'two_x_target', activityName: activity.name }
+          )
+          setTwoXTargetNotificationId(newTwoXId)
+        }
+      }
+      
+      // Reschedule 30-minute intervals
+      if (thirtyMinIntervalIds.length > 0) {
+        const newIntervalIds: string[] = []
+        const currentMinutes = Math.floor(currentElapsed / 60)
+        const nextThirtyMin = Math.ceil(currentMinutes / 30) * 30
+        
+        // Schedule next 10 30-minute intervals
+        for (let i = 0; i < 10; i++) {
+          const targetMin = nextThirtyMin + (i * 30)
+          const remainingSeconds = (targetMin * 60) - currentElapsed
+          if (remainingSeconds > 0) {
+            const notificationId = await scheduleNotificationWithDelay(
+              'Zen Tracker',
+              `You've been focusing on ${activity.name} for ${targetMin} minutes.`,
+              remainingSeconds,
+              { type: 'thirty_minute_interval', activityName: activity.name, totalMinutes: targetMin }
+            )
+            if (notificationId) {
+              newIntervalIds.push(notificationId)
+            }
+          }
+        }
+        setThirtyMinIntervalIds(newIntervalIds)
       }
       
       // Reschedule hourly notification for infinity mode
@@ -405,6 +494,16 @@ export default function TimerPage() {
       
       if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour) {
         await cancelNotification(targetPlusHourNotificationId)
+      }
+      
+      if (twoXTargetNotificationId && !hasNotifiedTwoXTarget) {
+        await cancelNotification(twoXTargetNotificationId)
+      }
+      
+      if (thirtyMinIntervalIds.length > 0) {
+        for (const id of thirtyMinIntervalIds) {
+          await cancelNotification(id)
+        }
       }
     }
     
