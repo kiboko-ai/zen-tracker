@@ -8,7 +8,6 @@ import {
   Animated,
   Dimensions,
   Platform,
-  NativeModules,
   AppState,
   AppStateStatus,
 } from 'react-native'
@@ -18,13 +17,10 @@ import { StackNavigationProp } from '@react-navigation/stack'
 import { AnimatedCircularProgress } from 'react-native-circular-progress'
 import { Picker } from '@react-native-picker/picker'
 import WheelPicker from 'react-native-wheely'
-import { format } from 'date-fns'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
 import BackgroundTimer from '../services/BackgroundTimer'
 import { useNotifications } from '../hooks/useNotifications'
-import LiveActivityService from '../services/notifications/LiveActivityService'
-import AnalyticsService from '../services/AnalyticsService'
 
 type TimerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Timer'>
 type TimerScreenRouteProp = RouteProp<RootStackParamList, 'Timer'>
@@ -36,17 +32,7 @@ export default function TimerPage() {
   const route = useRoute<TimerScreenRouteProp>()
   const activityId = route.params.id
   
-  const { 
-    activities, 
-    startSession, 
-    pauseSession, 
-    resumeSession, 
-    endSession, 
-    currentSession, 
-    updateActivity,
-    lastDailyReminderCancelDate,
-    setLastDailyReminderCancelDate
-  } = useStore()
+  const { activities, startSession, pauseSession, resumeSession, endSession, currentSession, updateActivity } = useStore()
   const activity = activities.find(a => a.id === activityId)
   
   // Notification hooks
@@ -55,15 +41,15 @@ export default function TimerPage() {
     requestPermission,
     showPermissionDeniedAlert,
     scheduleGoalNotification,
+    scheduleCheckInReminder,
+    scheduleSmartCheckInReminders,  // 스마트 체크인 리마인더 추가
     scheduleCompletionNotification,
     scheduleHourlyNotification,
-    scheduleTargetPlusOneHourNotification,
+    scheduleDoubleTargetNotification,
     scheduleDailyReminder,         // 일일 리마인더 스케줄링 함수 추가
     isDailyReminderScheduled,      // 일일 리마인더 상태 확인 함수 추가
-    cancelDailyReminder,           // 일일 리마인더 취소 함수 추가
     cancelNotification,
     cancelAllNotifications,
-    scheduleNotificationWithDelay,
     startLiveActivity
   } = useNotifications()
   
@@ -74,11 +60,13 @@ export default function TimerPage() {
   const [targetMinutes, setTargetMinutes] = useState(activity?.lastTargetMinutes || 0)
   const [showTargetPicker, setShowTargetPicker] = useState(true)
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false)
+  const [checkInNotificationId, setCheckInNotificationId] = useState<string | null>(null)
+  const [checkInNotificationIds, setCheckInNotificationIds] = useState<string[]>([])  // 스마트 체크인용 배열
   const [goalNotificationId, setGoalNotificationId] = useState<string | null>(null)
   const [hourlyNotificationId, setHourlyNotificationId] = useState<string | null>(null)
-  const [targetPlusHourNotificationId, setTargetPlusHourNotificationId] = useState<string | null>(null)
+  const [doubleTargetNotificationId, setDoubleTargetNotificationId] = useState<string | null>(null)
   const [hasNotifiedGoal, setHasNotifiedGoal] = useState(false)
-  const [hasNotifiedTargetPlusHour, setHasNotifiedTargetPlusHour] = useState(false)
+  const [hasNotifiedDouble, setHasNotifiedDouble] = useState(false)
   const [liveActivityId, setLiveActivityId] = useState<string | null>(null)
   
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -91,26 +79,12 @@ export default function TimerPage() {
   const targetSeconds = targetHours * 3600 + targetMinutes * 60
 
   useEffect(() => {
-    console.log('🔴 useEffect triggered - isRunning:', isRunning, 'isPaused:', isPaused, 'liveActivityId:', liveActivityId)
-    if (isRunning && startTimeRef.current) {  // Remove !isPaused condition to keep updating Live Activity
+    if (isRunning && !isPaused && startTimeRef.current) {
       // Use BackgroundTimer for accurate time tracking
       const id = BackgroundTimer.setBackgroundInterval(() => {
         if (startTimeRef.current) {
-          // When paused, use the frozen elapsed time, otherwise calculate current
-          const elapsed = isPaused 
-            ? seconds  // Use the frozen time when paused
-            : BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
-          
-          // Only update seconds when not paused
-          if (!isPaused) {
-            setSeconds(elapsed)
-          }
-          
-          // ALWAYS update Live Activity to reflect current state
-          if (liveActivityId) {
-            console.log(`📱 Updating Live Activity - elapsed: ${elapsed}, isPaused: ${isPaused}`)
-            LiveActivityService.updateActivity(liveActivityId, elapsed, isPaused)
-          }
+          const elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+          setSeconds(elapsed)
           
           // Animate completion dot when goal is reached
           if (elapsed >= targetSeconds && targetSeconds > 0) {
@@ -126,9 +100,9 @@ export default function TimerPage() {
               setHasNotifiedGoal(true)
             }
             
-            // Mark target+1hr as notified when reached
-            if (elapsed >= targetSeconds + 3600 && !hasNotifiedTargetPlusHour) {
-              setHasNotifiedTargetPlusHour(true)
+            // Mark double target as notified when reached
+            if (elapsed >= targetSeconds * 2 && !hasNotifiedDouble) {
+              setHasNotifiedDouble(true)
             }
           }
         }
@@ -148,7 +122,7 @@ export default function TimerPage() {
         intervalRef.current = null
       }
     }
-  }, [isRunning, isPaused, targetSeconds, completionDotAnim, liveActivityId, hasNotifiedGoal, hasNotifiedTargetPlusHour])
+  }, [isRunning, isPaused, targetSeconds, completionDotAnim])
 
 
   useEffect(() => {
@@ -199,27 +173,9 @@ export default function TimerPage() {
     pausedDurationRef.current = 0
     completionDotAnim.setValue(0) // Reset completion dot
     setHasNotifiedGoal(false) // Reset goal notification flag
-    setHasNotifiedTargetPlusHour(false) // Reset target+1hr notification flag
+    setHasNotifiedDouble(false) // Reset double target notification flag
     setIsRunning(true)
     setShowTargetPicker(false)
-    
-    // Log timer start event
-    if (activity) {
-      const targetMinutes = targetHours * 60 + targetMinutes
-      AnalyticsService.logTimerStart(activityId, activity.name, targetMinutes)
-    }
-    
-    // Check if it's before 9 AM and cancel daily reminder if not already cancelled today
-    const now = new Date()
-    const currentHour = now.getHours()
-    const today = format(now, 'yyyy-MM-dd')
-    
-    if (currentHour < 9 && lastDailyReminderCancelDate !== today) {
-      // Activity started before 9 AM, cancel today's daily reminder
-      console.log('Activity started before 9 AM, cancelling daily reminder for today')
-      await cancelDailyReminder()
-      setLastDailyReminderCancelDate(today)
-    }
     
     if (activity && hasPermission) {
       if (targetSeconds > 0) {
@@ -230,9 +186,17 @@ export default function TimerPage() {
         const goalId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
         setGoalNotificationId(goalId)
         
-        // Schedule target + 1 hour notification
-        const targetPlusHourId = await scheduleTargetPlusOneHourNotification(activity.name, targetMinutes)
-        setTargetPlusHourNotificationId(targetPlusHourId)
+        // Schedule 2x target notification
+        const doubleId = await scheduleDoubleTargetNotification(activity.name, targetMinutes)
+        setDoubleTargetNotificationId(doubleId)
+        
+        // Schedule smart check-in reminders that avoid conflicts with goal/2x notifications
+        // 목표/2x 알림과 충돌을 피하는 스마트 체크인 리마인더 스케줄
+        if (targetSeconds >= 1800) {
+          const checkInIds = await scheduleSmartCheckInReminders(activity.name, targetSeconds)
+          setCheckInNotificationIds(checkInIds)
+          console.log(`Scheduled ${checkInIds.length} smart check-in reminders`)
+        }
       } else {
         // Infinity mode (00:00): schedule hourly notifications
         const hourlyId = await scheduleHourlyNotification(activity.name)
@@ -241,52 +205,19 @@ export default function TimerPage() {
     }
     
     // Start Live Activity (iOS 16.1+, no permission needed)
-    if (activity) {
-      console.log('🟢 Starting Live Activity...')
-      const targetMinutes = targetSeconds > 0 ? Math.floor(targetSeconds / 60) : 0  // 0 for infinity mode
-      const activityId = await startLiveActivity(activity.name, targetMinutes)
-      console.log(`🟢 Live Activity started - Mode: ${targetSeconds > 0 ? `${targetMinutes}min` : 'Infinity'}, ID: ${activityId}`)
+    if (activity && targetSeconds > 0) {
+      const activityId = await startLiveActivity(activity.name, Math.floor(targetSeconds / 60))
       setLiveActivityId(activityId)
     }
   }
 
-  const handlePause = async () => {
-    console.log('⏸️ PAUSE BUTTON PRESSED')
+  const handlePause = () => {
     pauseSession()
     pauseStartRef.current = new Date()
     setIsPaused(true)
-    
-    // Cancel all scheduled notifications when pausing
-    console.log('⏸️ Cancelling notifications on pause')
-    
-    // Cancel hourly notification
-    if (hourlyNotificationId) {
-      await cancelNotification(hourlyNotificationId)
-      // Don't clear, will reschedule on resume
-    }
-    
-    // Cancel goal notification if not yet achieved
-    if (goalNotificationId && !hasNotifiedGoal) {
-      await cancelNotification(goalNotificationId)
-      // Don't clear, will reschedule on resume
-    }
-    
-    // Cancel target+1hr notification if not yet achieved
-    if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour) {
-      await cancelNotification(targetPlusHourNotificationId)
-      // Don't clear, will reschedule on resume
-    }
-    
-    // Send pause state to Live Activity
-    if (liveActivityId && startTimeRef.current) {
-      const currentElapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
-      console.log('⏸️ Sending pause state with elapsed:', currentElapsed)
-      await LiveActivityService.updateActivity(liveActivityId, currentElapsed, true)
-    }
   }
 
-  const handleResume = async () => {
-    console.log('▶️ RESUME BUTTON PRESSED')
+  const handleResume = () => {
     resumeSession()
     if (pauseStartRef.current) {
       const pauseDuration = Math.floor((new Date().getTime() - pauseStartRef.current.getTime()) / 1000)
@@ -294,118 +225,52 @@ export default function TimerPage() {
       pauseStartRef.current = null
     }
     setIsPaused(false)
-    
-    // Reschedule notifications based on remaining time
-    console.log('▶️ Rescheduling notifications on resume')
-    const currentElapsed = seconds // Current elapsed seconds
-    
-    if (activity) {
-      // Reschedule goal notification if not yet achieved
-      if (goalNotificationId && !hasNotifiedGoal && targetSeconds > 0) {
-        const remainingSeconds = targetSeconds - currentElapsed
-        if (remainingSeconds > 0) {
-          const newGoalId = await scheduleNotificationWithDelay(
-            'Zen Tracker',
-            `Great job! You've reached your ${Math.floor(targetSeconds / 60)} minute goal for ${activity.name}! 🎯`,
-            remainingSeconds,
-            { type: 'goal_achieved', activityName: activity.name }
-          )
-          setGoalNotificationId(newGoalId)
-        }
-      }
-      
-      // Reschedule target+1hr notification if not yet achieved
-      if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour && targetSeconds > 0) {
-        const targetPlusHour = targetSeconds + 3600
-        const remainingToTargetPlusHour = targetPlusHour - currentElapsed
-        if (remainingToTargetPlusHour > 0) {
-          const targetMinutes = Math.floor(targetSeconds / 60)
-          const totalMinutes = targetMinutes + 60
-          const newTargetPlusHourId = await scheduleNotificationWithDelay(
-            'Zen Tracker',
-            `You've been focusing on ${activity.name} for ${totalMinutes} minutes - an hour past your goal!`,
-            remainingToTargetPlusHour,
-            { type: 'target_plus_hour', activityName: activity.name }
-          )
-          setTargetPlusHourNotificationId(newTargetPlusHourId)
-        }
-      }
-      
-      // Reschedule hourly notification for infinity mode
-      if (hourlyNotificationId && targetSeconds === 0) {
-        const nextHour = Math.ceil(currentElapsed / 3600) * 3600
-        const remainingToNextHour = nextHour - currentElapsed
-        const newHourlyId = await scheduleNotificationWithDelay(
-          'Zen Tracker',
-          `You've been focusing on ${activity.name} for ${Math.ceil(currentElapsed / 3600)} hour(s).`,
-          remainingToNextHour,
-          { type: 'hourly_check', activityName: activity.name }
-        )
-        setHourlyNotificationId(newHourlyId)
-      }
-    }
-    
-    // Send resume state to Live Activity
-    if (liveActivityId && startTimeRef.current) {
-      const currentElapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
-      console.log('▶️ Sending resume state with elapsed:', currentElapsed)
-      await LiveActivityService.updateActivity(liveActivityId, currentElapsed, false)
-    }
   }
 
   const handleStop = async () => {
-    console.log('⏹️ STOP BUTTON PRESSED')
-    
-    // Log timer stop event
-    if (activity) {
-      AnalyticsService.logTimerStop(activityId, activity.name, seconds)
+    // Cancel all scheduled notifications
+    if (checkInNotificationId) {
+      await cancelNotification(checkInNotificationId)
+      setCheckInNotificationId(null)
     }
     
-    // End Live Activity FIRST (most important for user)
-    if (liveActivityId) {
-      console.log('⏹️ Ending Live Activity:', liveActivityId)
-      try {
-        await LiveActivityService.endActivity(liveActivityId)
-        setLiveActivityId(null)
-      } catch (error) {
-        console.error('Failed to end Live Activity:', error)
+    // Cancel smart check-in notifications
+    // 스마트 체크인 알림 취소
+    if (checkInNotificationIds.length > 0) {
+      for (const id of checkInNotificationIds) {
+        await cancelNotification(id)
       }
+      setCheckInNotificationIds([])
     }
     
-    // End the session and navigate
-    console.log('⏹️ Calling endSession...')
+    if (hourlyNotificationId) {
+      await cancelNotification(hourlyNotificationId)
+      setHourlyNotificationId(null)
+    }
+    
+    if (goalNotificationId && !hasNotifiedGoal) {
+      // Cancel goal notification if not yet achieved
+      await cancelNotification(goalNotificationId)
+      setGoalNotificationId(null)
+    }
+    
+    if (doubleTargetNotificationId && !hasNotifiedDouble) {
+      // Cancel double target notification if not yet achieved
+      await cancelNotification(doubleTargetNotificationId)
+      setDoubleTargetNotificationId(null)
+    }
+    
+    // Send completion notification - TEMPORARILY DISABLED
+    // if (activity && seconds > 0) {
+    //   const totalMinutes = Math.floor(seconds / 60)
+    //   await scheduleCompletionNotification(activity.name, totalMinutes)
+    // }
+    
+    // End Live Activity if exists
+    // TODO: Implement when Live Activity native module is ready
+    
     endSession()
-    console.log('⏹️ Navigating to Report...')
     navigation.navigate('Report')
-    
-    // Then clean up notifications asynchronously
-    const cleanupNotifications = async () => {
-      // Cancel all scheduled notifications
-      if (checkInNotificationId) {
-        await cancelNotification(checkInNotificationId)
-      }
-      
-      // Cancel smart check-in notifications
-      if (checkInNotificationIds.length > 0) {
-        for (const id of checkInNotificationIds) {
-          await cancelNotification(id)
-        }
-      }
-      
-      if (hourlyNotificationId) {
-        await cancelNotification(hourlyNotificationId)
-      }
-      
-      if (goalNotificationId && !hasNotifiedGoal) {
-        await cancelNotification(goalNotificationId)
-      }
-      
-      if (targetPlusHourNotificationId && !hasNotifiedTargetPlusHour) {
-        await cancelNotification(targetPlusHourNotificationId)
-      }
-    }
-    
-    cleanupNotifications()
   }
 
   const formatTime = (totalSeconds: number) => {
@@ -631,8 +496,6 @@ export default function TimerPage() {
                 <TouchableOpacity
                   onPress={handleStop}
                   style={styles.stopButton}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <View style={styles.stopIcon} />
                 </TouchableOpacity>

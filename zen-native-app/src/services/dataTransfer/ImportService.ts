@@ -116,14 +116,19 @@ export class ImportService {
           break
           
         case 'merge':
-          const existingActivityIds = new Set(currentActivities.map(a => a.id))
+          const existingActivityNames = new Set(currentActivities.map(a => a.name.toLowerCase()))
           const existingSessionIds = new Set(currentSessions.map(s => s.id))
           
-          activitiesImported = importedData.activities.filter((a: Activity) => !existingActivityIds.has(a.id)).length
+          // Count new activities (those that don't exist) and merged activities (those that do exist)
+          const newActivities = importedData.activities.filter((a: Activity) => !existingActivityNames.has(a.name.toLowerCase()))
+          const mergedActivities = importedData.activities.filter((a: Activity) => existingActivityNames.has(a.name.toLowerCase()))
+          
+          activitiesImported = newActivities.length + mergedActivities.length
           sessionsImported = importedData.sessions.filter((s: Session) => !existingSessionIds.has(s.id)).length
           break
           
         case 'append':
+          // All activities are processed (either added new or merged with existing)
           activitiesImported = importedData.activities.length
           sessionsImported = importedData.sessions.length
           break

@@ -9,11 +9,9 @@ interface UseNotificationsReturn {
   requestPermission: () => Promise<boolean>;
   showPermissionDeniedAlert: () => void;
   scheduleGoalNotification: (activityName: string, targetMinutes: number, delaySeconds?: number) => Promise<string | null>;
-  scheduleCheckInReminder: (activityName: string, intervalMinutes?: number) => Promise<string | null>;
-  scheduleSmartCheckInReminders: (activityName: string, targetSeconds: number) => Promise<string[]>;
   scheduleCompletionNotification: (activityName: string, totalMinutes: number) => Promise<string | null>;
   scheduleHourlyNotification: (activityName: string) => Promise<string | null>;
-  scheduleDoubleTargetNotification: (activityName: string, targetMinutes: number) => Promise<string | null>;
+  scheduleTargetPlusOneHourNotification: (activityName: string, targetMinutes: number) => Promise<string | null>;
   scheduleDailyReminder: () => Promise<string | null>;
   cancelDailyReminder: () => Promise<boolean>;
   isDailyReminderScheduled: () => Promise<boolean>;
@@ -82,34 +80,6 @@ export const useNotifications = (): UseNotificationsReturn => {
     [hasPermission, showPermissionDeniedAlert]
   );
 
-  const scheduleCheckInReminder = useCallback(
-    async (activityName: string, intervalMinutes: number = 30): Promise<string | null> => {
-      if (!hasPermission) {
-        console.log('No permission for check-in reminders');
-        return null;
-      }
-      return await NotificationService.scheduleSessionCheckInReminder(
-        activityName,
-        intervalMinutes
-      );
-    },
-    [hasPermission]
-  );
-
-  const scheduleSmartCheckInReminders = useCallback(
-    async (activityName: string, targetSeconds: number): Promise<string[]> => {
-      if (!hasPermission) {
-        console.log('No permission for smart check-in reminders');
-        return [];
-      }
-      return await NotificationService.scheduleSmartCheckInReminders(
-        activityName,
-        targetSeconds
-      );
-    },
-    [hasPermission]
-  );
-
   const scheduleCompletionNotification = useCallback(
     async (activityName: string, totalMinutes: number): Promise<string | null> => {
       if (!hasPermission) {
@@ -135,13 +105,13 @@ export const useNotifications = (): UseNotificationsReturn => {
     [hasPermission]
   );
 
-  const scheduleDoubleTargetNotification = useCallback(
+  const scheduleTargetPlusOneHourNotification = useCallback(
     async (activityName: string, targetMinutes: number): Promise<string | null> => {
       if (!hasPermission) {
-        console.log('No permission for double target notifications');
+        console.log('No permission for target+1hr notifications');
         return null;
       }
-      return await NotificationService.scheduleDoubleTargetNotification(
+      return await NotificationService.scheduleTargetPlusOneHourNotification(
         activityName,
         targetMinutes
       );
@@ -193,6 +163,17 @@ export const useNotifications = (): UseNotificationsReturn => {
     await NotificationService.cancelAllNotifications();
   }, []);
 
+  const scheduleNotificationWithDelay = useCallback(
+    async (title: string, body: string, delaySeconds: number, data?: any): Promise<string | null> => {
+      if (!hasPermission) {
+        console.log('No notification permission for rescheduling');
+        return null;
+      }
+      return await NotificationService.scheduleNotificationWithDelay(title, body, delaySeconds, data);
+    },
+    [hasPermission]
+  );
+
   const startLiveActivity = useCallback(
     async (activityName: string, targetMinutes: number): Promise<string | null> => {
       // Try Live Activity first (no permission needed)
@@ -214,16 +195,15 @@ export const useNotifications = (): UseNotificationsReturn => {
     requestPermission,
     showPermissionDeniedAlert,
     scheduleGoalNotification,
-    scheduleCheckInReminder,
-    scheduleSmartCheckInReminders,  // 스마트 체크인 리마인더 추가
     scheduleCompletionNotification,
     scheduleHourlyNotification,
-    scheduleDoubleTargetNotification,
+    scheduleTargetPlusOneHourNotification,
     scheduleDailyReminder,        // 일일 리마인더 스케줄링
     cancelDailyReminder,          // 일일 리마인더 취소
     isDailyReminderScheduled,     // 일일 리마인더 상태 확인
     cancelNotification,
     cancelAllNotifications,
+    scheduleNotificationWithDelay,
     startLiveActivity,
   };
 };

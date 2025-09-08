@@ -2,11 +2,16 @@
 
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
+#import <UserNotifications/UserNotifications.h>
+#import <Firebase.h>
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  // Firebase 초기화
+  [FIRApp configure];
+  
   self.moduleName = @"main";
 
   // You can add your custom initial props in the dictionary below.
@@ -57,6 +62,14 @@
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
 {
   return [super application:application didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler];
+}
+
+// Called when app is about to terminate
+- (void)applicationWillTerminate:(UIApplication *)application
+{
+  // Cancel all scheduled notifications when app is terminated
+  [[UNUserNotificationCenter currentNotificationCenter] removeAllPendingNotificationRequests];
+  NSLog(@"App terminating - cancelled all pending notifications");
 }
 
 @end
