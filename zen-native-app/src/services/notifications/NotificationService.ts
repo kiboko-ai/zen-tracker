@@ -178,8 +178,13 @@ class NotificationService {
     delaySeconds?: number
   ): Promise<string | null> {
     if (!this.hasPermission) {
-      console.log('No notification permission');
-      return null;
+      console.log('No notification permission - requesting now...');
+      // Try to request permission if not granted
+      const granted = await this.requestPermissions();
+      if (!granted) {
+        console.log('Permission denied by user');
+        return null;
+      }
     }
 
     // Prevent duplicate notifications
@@ -194,6 +199,12 @@ class NotificationService {
       return null;
     }
 
+    // Android-specific configuration
+    const androidConfig = Platform.OS === 'android' ? {
+      channelId: 'timer-notifications',
+      priority: Notifications.AndroidNotificationPriority.HIGH,
+    } : {};
+
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Zen Tracker',
@@ -205,10 +216,12 @@ class NotificationService {
           activityName,
           targetMinutes 
         },
+        ...androidConfig,
       },
-      trigger: delaySeconds ? { seconds: delaySeconds } : null,
+      trigger: delaySeconds ? { seconds: delaySeconds, channelId: 'timer-notifications' } : null,
     });
 
+    console.log(`Scheduled goal notification for ${activityName} with ID: ${notificationId}`);
     return notificationId;
   }
 
@@ -223,9 +236,28 @@ class NotificationService {
     intervalMinutes: number = 30
   ): Promise<string | null> {
     if (!this.hasPermission) {
-      console.log('No notification permission');
-      return null;
+      console.log('No notification permission - requesting now...');
+      const granted = await this.requestPermissions();
+      if (!granted) {
+        console.log('Permission denied by user');
+        return null;
+      }
     }
+
+    // Android-specific configuration
+    const androidConfig = Platform.OS === 'android' ? {
+      channelId: 'interval-notifications',
+      priority: Notifications.AndroidNotificationPriority.DEFAULT,
+    } : {};
+
+    const trigger = Platform.OS === 'android' ? {
+      seconds: intervalMinutes * 60,
+      repeats: true,
+      channelId: 'interval-notifications',
+    } : {
+      seconds: intervalMinutes * 60,
+      repeats: true,
+    };
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
@@ -237,13 +269,12 @@ class NotificationService {
           activityName,
           intervalMinutes 
         },
+        ...androidConfig,
       },
-      trigger: {
-        seconds: intervalMinutes * 60,
-        repeats: true,
-      },
+      trigger,
     });
 
+    console.log(`Scheduled session check-in for ${activityName} with ID: ${notificationId}`);
     return notificationId;
   }
 
