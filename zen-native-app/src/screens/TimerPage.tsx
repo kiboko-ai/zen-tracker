@@ -9,22 +9,21 @@ import {
   Dimensions,
   Platform,
   NativeModules,
-  AppState,
-  AppStateStatus,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
-import { AnimatedCircularProgress } from 'react-native-circular-progress'
 import { Picker } from '@react-native-picker/picker'
 import WheelPicker from 'react-native-wheely'
 import { format } from 'date-fns'
 import { useStore } from '../store/store'
 import { RootStackParamList } from '../../App'
-import BackgroundTimer from '../services/BackgroundTimer'
 import { useNotifications } from '../hooks/useNotifications'
 import LiveActivityService from '../services/notifications/LiveActivityService'
 import AnalyticsService from '../services/AnalyticsService'
+import { TimerDisplay, TimerControls } from '../features/timer/components'
+import { useTimer } from '../features/timer/hooks/useTimer'
+import { formatTime, formatDuration } from '../shared/utils/time'
 
 type TimerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Timer'>
 type TimerScreenRouteProp = RouteProp<RootStackParamList, 'Timer'>
