@@ -109,6 +109,89 @@
    - 깃발 아이콘 제거, infinity 아이콘만 유지
    - UI 단순화
 
+### 🤖 Android 호환성 분석 결과
+
+#### ✅ 모든 코드 수정이 Android에서 안전함
+
+1. **React Native 표준 기능들**
+   - `useRef`, `useEffect`, `useState` 등 React hooks는 Android/iOS 동일 작동
+   - `isPausedRef`, `liveActivityIdRef`, `pausedDurationRef` 등 ref 사용 문제없음
+   - useEffect cleanup 함수도 플랫폼 독립적
+
+2. **Live Activity 처리 (iOS 전용 기능)**
+   - **안전하게 구현됨**: `LiveActivityService.isAvailable()`에서 Platform 체크
+   ```javascript
+   if (Platform.OS === 'ios' && parseInt(Platform.Version.toString()) >= 16)
+   ```
+   - Android에서는 항상 `false` 반환
+   - `liveActivityIdRef.current`는 Android에서 항상 `null`
+   - 모든 Live Activity 관련 if문이 자동으로 skip됨
+   - `NativeModules.LiveActivityModule` 없어도 에러 발생하지 않음
+
+3. **BackgroundTimer 서비스**
+   - 순수 JavaScript 구현으로 크로스 플랫폼 지원
+   - `AppState` API 사용하여 Android/iOS 모두 대응
+   - Background/Foreground 전환 시 시간 보정 로직 포함
+
+4. **Push Notifications**
+   - `expo-notifications` 크로스 플랫폼 라이브러리 사용
+   - `cancelAllNotifications()`, `scheduleNotificationWithDelay()` 모두 호환
+   - Android에서도 동일하게 작동
+
+5. **타이머 일시정지/재시작 로직**
+   - 모든 타이머 계산이 JavaScript 레벨에서 처리
+   - elapsed time, pausedDuration 관리 플랫폼 독립적
+   - interval 관리도 JavaScript로 구현
+
+6. **Platform별 UI 분기**
+   - TimerPage.tsx Line 643: `Platform.OS === 'ios'` 체크
+   - iOS: Native Picker 사용
+   - Android: WheelPicker 사용
+
+#### 📱 Android 실행 시 예상 동작
+
+| 기능 | Android 동작 | 비고 |
+|------|------------|------|
+| 타이머 시작/정지 | ✅ 정상 작동 | JavaScript 기반 |
+| 일시정지/재시작 | ✅ 정상 작동 | ref 기반 상태 관리 |
+| Push Notifications | ✅ 정상 작동 | expo-notifications |
+| Live Activity | ⏭️ 자동 skip | iOS 전용, 에러 없음 |
+| cleanup 함수 | ✅ 정상 작동 | 알림만 취소 |
+| 시간 선택 UI | ✅ WheelPicker | Platform 분기 처리 |
+
+#### 🔍 코드 안전성 확인 포인트
+
+1. **Live Activity 호출 부분**
+   ```javascript
+   if (liveActivityIdRef.current && !isPausedRef.current) {
+     // Android에서는 liveActivityIdRef.current가 항상 null이므로 실행 안됨
+     LiveActivityService.updateActivity(...)
+   }
+   ```
+
+2. **cleanup 함수**
+   ```javascript
+   if (liveActivityIdRef.current) {
+     // Android에서는 skip
+     await LiveActivityService.endActivity(...)
+   }
+   await cancelAllNotifications() // Android에서도 실행
+   ```
+
+3. **NativeModules 체크**
+   ```javascript
+   if (!NativeModules.LiveActivityModule) {
+     console.log('LiveActivityModule not found');
+     return false; // Android에서 안전하게 false 반환
+   }
+   ```
+
+#### ✅ 결론
+**코드 수정 없이 Android에서 완벽하게 작동합니다.**
+- 모든 iOS 전용 기능이 조건부로 처리됨
+- 크로스 플랫폼 라이브러리 사용
+- Platform 체크로 안전하게 분기 처리
+
 ---
 
 ## 📅 2025년 9월 9일 작업 내용
