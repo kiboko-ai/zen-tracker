@@ -96,28 +96,57 @@ export default function TimerPage() {
   const startTimeRef = useRef<Date | null>(null)
   const pausedDurationRef = useRef<number>(0)
   const pauseStartRef = useRef<Date | null>(null)
+  const isPausedRef = useRef<boolean>(false)
+  const liveActivityIdRef = useRef<string | null>(null)
   const targetSeconds = targetHours * 3600 + targetMinutes * 60
+
+  // Update isPausedRef when isPaused changes
+  useEffect(() => {
+    isPausedRef.current = isPaused
+  }, [isPaused])
+
+  // Update liveActivityIdRef when liveActivityId changes
+  useEffect(() => {
+    liveActivityIdRef.current = liveActivityId
+  }, [liveActivityId])
 
   useEffect(() => {
     console.log('🔴 useEffect triggered - isRunning:', isRunning, 'isPaused:', isPaused, 'liveActivityId:', liveActivityId)
+    
+    // Clear existing interval first
+    if (intervalRef.current) {
+      BackgroundTimer.clearBackgroundInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    
     if (isRunning && startTimeRef.current) {  // Remove !isPaused condition to keep updating Live Activity
       // Use BackgroundTimer for accurate time tracking
       const id = BackgroundTimer.setBackgroundInterval(() => {
         if (startTimeRef.current) {
-          // When paused, use the frozen elapsed time, otherwise calculate current
-          const elapsed = isPaused 
-            ? seconds  // Use the frozen time when paused
-            : BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+          // Calculate elapsed time differently based on pause state
+          let elapsed: number
           
-          // Only update seconds when not paused
-          if (!isPaused) {
+          if (isPausedRef.current && pauseStartRef.current) {
+            // When paused, use the elapsed time at the moment of pause
+            // Don't add the time that has passed since pause started
+            const timeSincePause = Math.floor((new Date().getTime() - pauseStartRef.current.getTime()) / 1000)
+            elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current + timeSincePause)
+          } else {
+            // When running, calculate normally
+            elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+          }
+          
+          // Only update seconds when not paused - use ref to get current value
+          if (!isPausedRef.current) {
             setSeconds(elapsed)
           }
           
-          // ALWAYS update Live Activity to reflect current state
-          if (liveActivityId) {
-            console.log(`📱 Updating Live Activity - elapsed: ${elapsed}, isPaused: ${isPaused}`)
-            LiveActivityService.updateActivity(liveActivityId, elapsed, isPaused)
+          // Update Live Activity only when running (not paused)
+          // When paused, the Live Activity should keep showing the paused state
+          // without constant updates that might cause timing issues
+          if (liveActivityIdRef.current && !isPausedRef.current) {
+            console.log(`📱 Updating Live Activity - elapsed: ${elapsed}, isPaused: ${isPausedRef.current}`)
+            LiveActivityService.updateActivity(liveActivityIdRef.current, elapsed, isPausedRef.current)
           }
           
           // Animate completion dot when goal is reached
@@ -148,11 +177,6 @@ export default function TimerPage() {
       }, 1000)
       
       intervalRef.current = id
-    } else {
-      if (intervalRef.current) {
-        BackgroundTimer.clearBackgroundInterval(intervalRef.current)
-        intervalRef.current = null
-      }
     }
     
     return () => {
@@ -161,7 +185,7 @@ export default function TimerPage() {
         intervalRef.current = null
       }
     }
-  }, [isRunning, isPaused, targetSeconds, completionDotAnim, liveActivityId, hasNotifiedGoal, hasNotifiedTargetPlusHour, hasNotifiedTwoXTarget])
+  }, [isRunning, targetSeconds, completionDotAnim, hasNotifiedGoal, hasNotifiedTargetPlusHour, hasNotifiedTwoXTarget])
 
 
   useEffect(() => {
@@ -177,10 +201,13 @@ export default function TimerPage() {
         useNativeDriver: true,
       }),
     ]).start()
-    
-    // Cleanup function: runs when component unmounts or dependencies change
+  }, [fadeAnim, scaleAnim])
+
+  // Separate cleanup effect that only runs on unmount
+  useEffect(() => {
+    // This cleanup function only runs when component unmounts
     return () => {
-      console.log('🧹 Cleaning up timer and notifications...')
+      console.log('🧹 Component unmounting - Cleaning up timer and notifications...')
       
       // Clear the background timer
       if (intervalRef.current) {
@@ -191,42 +218,15 @@ export default function TimerPage() {
       // Cancel all scheduled notifications when component unmounts (app killed)
       const cancelAllScheduledNotifications = async () => {
         try {
-          // Cancel all notification types
-          if (checkInNotificationId) {
-            await cancelNotification(checkInNotificationId)
-          }
-          
-          if (checkInNotificationIds.length > 0) {
-            for (const id of checkInNotificationIds) {
-              await cancelNotification(id)
-            }
-          }
-          
-          if (hourlyNotificationId) {
-            await cancelNotification(hourlyNotificationId)
-          }
-          
-          if (goalNotificationId) {
-            await cancelNotification(goalNotificationId)
-          }
-          
-          if (targetPlusHourNotificationId) {
-            await cancelNotification(targetPlusHourNotificationId)
-          }
-          
-          if (twoXTargetNotificationId) {
-            await cancelNotification(twoXTargetNotificationId)
-          }
-          
-          if (thirtyMinIntervalIds.length > 0) {
-            for (const id of thirtyMinIntervalIds) {
-              await cancelNotification(id)
-            }
-          }
+          // Cancel ALL notifications (safer approach for unmount)
+          // Since we can't access the latest state values due to stale closure,
+          // it's better to cancel all notifications
+          await cancelAllNotifications()
           
           // End Live Activity if exists
-          if (liveActivityId) {
-            LiveActivityService.endActivity(liveActivityId)
+          if (liveActivityIdRef.current) {
+            console.log(`🛑 Ending Live Activity: ${liveActivityIdRef.current}`)
+            await LiveActivityService.endActivity(liveActivityIdRef.current)
           }
           
           console.log('✅ All notifications and timers cleaned up')
@@ -237,9 +237,7 @@ export default function TimerPage() {
       
       cancelAllScheduledNotifications()
     }
-  }, [checkInNotificationId, checkInNotificationIds, 
-      hourlyNotificationId, goalNotificationId, targetPlusHourNotificationId, 
-      twoXTargetNotificationId, thirtyMinIntervalIds, liveActivityId, cancelNotification])
+  }, []) // Empty dependency array - only runs on unmount
 
   const handleStart = async () => {
     // Request notification permission on first timer start
@@ -406,6 +404,13 @@ export default function TimerPage() {
       pauseStartRef.current = null
     }
     setIsPaused(false)
+    
+    // Update Live Activity to resume state
+    if (liveActivityIdRef.current) {
+      const currentElapsed = seconds
+      console.log('▶️ Sending resume state to Live Activity with elapsed:', currentElapsed)
+      await LiveActivityService.updateActivity(liveActivityIdRef.current, currentElapsed, false)
+    }
     
     // Reschedule notifications based on remaining time
     console.log('▶️ Rescheduling notifications on resume')

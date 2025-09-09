@@ -27,25 +27,87 @@
 - **문제**: 타이머 실행 중 앱 강제종료 시 예약된 Push Notification이 계속 발송
 - **원인**: useEffect에 cleanup 함수 없음, iOS 시스템이 예약 알림 독립적으로 관리
 - **해결**: useEffect cleanup 함수 추가
-  ```typescript
-  return () => {
-    // BackgroundTimer 정리
-    if (intervalRef.current) {
-      BackgroundTimer.clearBackgroundInterval(intervalRef.current)
-    }
-    // 모든 예약 알림 취소
-    cancelAllScheduledNotifications()
-    // Live Activity 종료
-    if (liveActivityId) {
-      LiveActivityService.endActivity(liveActivityId)
-    }
-  }
-  ```
-- **결과**: 앱 강제종료 시 모든 알림 자동 취소
 
-#### 4. **수정된 파일 목록**
-- `src/screens/TimerPage.tsx`: 변수명 통일, cleanup 함수 추가
-- `ios/ZenActivityWidget/ZenActivityWidgetLiveActivity.swift`: Progress Bar 제거, UI 단순화
+#### 4. **타이머 일시정지/재시작 버그 수정 (1차)**
+- **문제**: 일시정지 후 재시작 시 타이머가 멈춰서 작동하지 않음
+- **원인**: interval 콜백 내부에서 `seconds` state 참조 시 stale closure 발생
+- **해결**: TimerPage.tsx 수정
+  - 항상 `startTimeRef.current`와 `pausedDurationRef.current`로부터 elapsed time 계산
+  - `seconds` state를 interval 내부에서 직접 참조하지 않도록 변경
+  - 108번 줄: `const elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)`
+- **결과**: 일시정지/재시작 시 타이머가 정상적으로 작동
+
+#### 5. **타이머 일시정지/재시작 버그 수정 (2차 - 완전 해결)**
+- **문제**: 여전히 일시정지 후 재시작 시 타이머가 작동하지 않음
+- **원인**: 
+  - `isPaused`가 dependency array에 있어 interval이 재생성되는 문제
+  - interval 내부의 stale closure로 `isPaused` 상태가 업데이트되지 않음
+- **해결**:
+  - `isPausedRef` 추가하여 항상 최신 상태 참조
+  - `liveActivityIdRef` 추가하여 Live Activity ID 최신 상태 유지
+  - dependency array에서 `isPaused`와 `liveActivityId` 제거
+  - interval 생성 전 기존 interval 확실히 제거
+- **결과**: 일시정지/재시작이 완벽하게 작동
+
+#### 6. **cleanup 함수 실행 시점 버그 수정**
+- **문제**: 일시정지 버튼 누를 때 "✅ All notifications and timers cleaned up" 메시지 출력
+- **원인**: cleanup 함수가 dependency 변경 시마다 실행됨
+- **해결**:
+  - 애니메이션 useEffect와 cleanup useEffect 분리
+  - cleanup useEffect에 빈 dependency array `[]` 사용
+  - 컴포넌트 unmount 시에만 cleanup 실행
+- **결과**: 일시정지 시 cleanup이 실행되지 않고, 컴포넌트 unmount 시에만 실행
+
+#### 7. **Live Activity와 앱 타이머 동기화 문제 해결**
+- **문제**: 
+  - 일시정지 상태가 Live Activity에 반영되지 않음
+  - 일시정지 중에도 Live Activity 타이머가 계속 진행
+  - 재시작 시 앱 타이머와 Live Activity 타이머 간 갭 발생
+- **원인**:
+  - interval 내부에서 `liveActivityId` stale closure 문제
+  - 일시정지 중에도 매초마다 Live Activity 업데이트
+  - 일시정지 중 elapsed time이 계속 증가
+- **해결**:
+  1. ref 추가 및 업데이트:
+     - `liveActivityIdRef` 추가
+     - `useEffect`로 ref 값 동기화
+  2. 일시정지 중 elapsed time 계산 수정:
+     - 일시정지 시 `pauseStartRef` 기준으로 시간 고정
+     - `timeSincePause` 계산하여 pausedDuration에 더함
+  3. Live Activity 업데이트 최적화:
+     - 일시정지 중에는 매초 업데이트 중지
+     - 일시정지/재시작 시점에만 한 번 업데이트
+  4. cleanup 함수 개선:
+     - `liveActivityIdRef.current` 사용하여 확실한 종료
+     - `cancelAllNotifications()` 사용으로 모든 알림 취소
+- **결과**: 
+  - Live Activity가 앱의 일시정지 상태와 완벽히 동기화
+  - 타이머 갭 문제 해결
+### 📝 수정된 파일 목록
+
+#### JavaScript/TypeScript
+1. **src/screens/TimerPage.tsx** (주요 수정 파일)
+   - 변수명 통일 (targetMinutes → totalMinutes, calculatedMinutes 등)
+   - cleanup 함수 추가 및 개선
+   - `isPausedRef`, `liveActivityIdRef` 추가
+   - 일시정지 중 elapsed time 계산 로직 개선
+   - Live Activity 업데이트 최적화
+   - handleResume에 Live Activity 업데이트 추가
+
+2. **src/services/BackgroundTimer.ts**
+   - alias 메서드 추가 (setInterval, clearInterval)
+
+3. **src/services/AnalyticsService.ts**
+   - Firebase Analytics mock 구현
+
+#### iOS Native (Swift/Objective-C)
+1. **ios/ZenApp/AppDelegate.mm**
+   - Firebase 관련 코드 주석 처리
+
+2. **ios/ZenActivityWidget/ZenActivityWidgetLiveActivity.swift**
+   - Progress Bar와 Percentage 제거
+   - 깃발 아이콘 제거, infinity 아이콘만 유지
+   - UI 단순화
 
 ---
 
