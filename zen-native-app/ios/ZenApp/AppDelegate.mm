@@ -3,14 +3,14 @@
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
 #import <UserNotifications/UserNotifications.h>
-#import <Firebase.h>
+// #import <Firebase.h> // Firebase not installed
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  // Firebase 초기화
-  [FIRApp configure];
+  // Firebase 초기화 - Firebase not installed, skipping
+  // [FIRApp configure];
   
   self.moduleName = @"main";
 

@@ -177,7 +177,69 @@ export default function TimerPage() {
         useNativeDriver: true,
       }),
     ]).start()
-  }, [isRunning])
+    
+    // Cleanup function: runs when component unmounts or dependencies change
+    return () => {
+      console.log('🧹 Cleaning up timer and notifications...')
+      
+      // Clear the background timer
+      if (intervalRef.current) {
+        BackgroundTimer.clearBackgroundInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      
+      // Cancel all scheduled notifications when component unmounts (app killed)
+      const cancelAllScheduledNotifications = async () => {
+        try {
+          // Cancel all notification types
+          if (checkInNotificationId) {
+            await cancelNotification(checkInNotificationId)
+          }
+          
+          if (checkInNotificationIds.length > 0) {
+            for (const id of checkInNotificationIds) {
+              await cancelNotification(id)
+            }
+          }
+          
+          if (hourlyNotificationId) {
+            await cancelNotification(hourlyNotificationId)
+          }
+          
+          if (goalNotificationId) {
+            await cancelNotification(goalNotificationId)
+          }
+          
+          if (targetPlusHourNotificationId) {
+            await cancelNotification(targetPlusHourNotificationId)
+          }
+          
+          if (twoXTargetNotificationId) {
+            await cancelNotification(twoXTargetNotificationId)
+          }
+          
+          if (thirtyMinIntervalIds.length > 0) {
+            for (const id of thirtyMinIntervalIds) {
+              await cancelNotification(id)
+            }
+          }
+          
+          // End Live Activity if exists
+          if (liveActivityId) {
+            LiveActivityService.endActivity(liveActivityId)
+          }
+          
+          console.log('✅ All notifications and timers cleaned up')
+        } catch (error) {
+          console.error('Error cleaning up notifications:', error)
+        }
+      }
+      
+      cancelAllScheduledNotifications()
+    }
+  }, [checkInNotificationId, checkInNotificationIds, 
+      hourlyNotificationId, goalNotificationId, targetPlusHourNotificationId, 
+      twoXTargetNotificationId, thirtyMinIntervalIds, liveActivityId, cancelNotification])
 
   const handleStart = async () => {
     // Request notification permission on first timer start
@@ -219,8 +281,8 @@ export default function TimerPage() {
     
     // Log timer start event
     if (activity) {
-      const targetMinutes = targetHours * 60 + targetMinutes
-      AnalyticsService.logTimerStart(activityId, activity.name, targetMinutes)
+      const totalMinutes = targetHours * 60 + targetMinutes
+      AnalyticsService.logTimerStart(activityId, activity.name, totalMinutes)
     }
     
     // Check if it's before 9 AM and cancel daily reminder if not already cancelled today
@@ -237,29 +299,29 @@ export default function TimerPage() {
     
     if (activity && hasPermission) {
       if (targetSeconds > 0) {
-        const targetMinutes = Math.floor(targetSeconds / 60)
+        const calculatedMinutes = Math.floor(targetSeconds / 60)
         
         // Case 1: 목표달성 Push
-        const goalId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
+        const goalId = await scheduleGoalNotification(activity.name, calculatedMinutes, targetSeconds)
         setGoalNotificationId(goalId)
         
         // Case 3: 2x 목표달성 Push
-        const twoXId = await scheduleTwoXTargetNotification(activity.name, targetMinutes)
+        const twoXId = await scheduleTwoXTargetNotification(activity.name, calculatedMinutes)
         setTwoXTargetNotificationId(twoXId)
         
         // Case 2 & 4: 30분 간격 Push 스케줄링
         // 특별한 경우: 15, 45, 75분 등 (15 + 30*n)
-        const is15PlusMultiple30 = targetMinutes === 15 || (targetMinutes > 15 && (targetMinutes - 15) % 30 === 0)
+        const is15PlusMultiple30 = calculatedMinutes === 15 || (calculatedMinutes > 15 && (calculatedMinutes - 15) % 30 === 0)
         
         if (is15PlusMultiple30) {
           // Case 4: 2x 이후부터 30분 간격
-          const startAfter = targetMinutes * 2 // 2x 목표 이후부터 시작
+          const startAfter = calculatedMinutes * 2 // 2x 목표 이후부터 시작
           const intervalIds = await scheduleThirtyMinuteIntervals(activity.name, startAfter, 10)
           setThirtyMinIntervalIds(intervalIds)
-        } else if (targetMinutes >= 30) {
+        } else if (calculatedMinutes >= 30) {
           // Case 2: 설정시간이 30분 이상이면 30분 초과 시점부터 30분 간격
-          const firstInterval = Math.ceil(targetMinutes / 30) * 30 // 다음 30분 배수
-          if (firstInterval > targetMinutes) {
+          const firstInterval = Math.ceil(calculatedMinutes / 30) * 30 // 다음 30분 배수
+          if (firstInterval > calculatedMinutes) {
             // 첫 30분 간격 알림부터 시작 (목표 시간과 겹치지 않도록)
             const intervalIds = await scheduleThirtyMinuteIntervals(activity.name, firstInterval - 30, 10)
             setThirtyMinIntervalIds(intervalIds)
@@ -279,9 +341,9 @@ export default function TimerPage() {
     // Start Live Activity (iOS 16.1+, no permission needed)
     if (activity) {
       console.log('🟢 Starting Live Activity...')
-      const targetMinutes = targetSeconds > 0 ? Math.floor(targetSeconds / 60) : 0  // 0 for infinity mode
-      const activityId = await startLiveActivity(activity.name, targetMinutes)
-      console.log(`🟢 Live Activity started - Mode: ${targetSeconds > 0 ? `${targetMinutes}min` : 'Infinity'}, ID: ${activityId}`)
+      const liveActivityMinutes = targetSeconds > 0 ? Math.floor(targetSeconds / 60) : 0  // 0 for infinity mode
+      const activityId = await startLiveActivity(activity.name, liveActivityMinutes)
+      console.log(`🟢 Live Activity started - Mode: ${targetSeconds > 0 ? `${liveActivityMinutes}min` : 'Infinity'}, ID: ${activityId}`)
       setLiveActivityId(activityId)
     }
   }
@@ -369,8 +431,8 @@ export default function TimerPage() {
         const targetPlusHour = targetSeconds + 3600
         const remainingToTargetPlusHour = targetPlusHour - currentElapsed
         if (remainingToTargetPlusHour > 0) {
-          const targetMinutes = Math.floor(targetSeconds / 60)
-          const totalMinutes = targetMinutes + 60
+          const baseMinutes = Math.floor(targetSeconds / 60)
+          const totalMinutes = baseMinutes + 60
           const newTargetPlusHourId = await scheduleNotificationWithDelay(
             'Zen Tracker',
             `You've been focusing on ${activity.name} for ${totalMinutes} minutes - an hour past your goal!`,
@@ -386,8 +448,8 @@ export default function TimerPage() {
         const twoXTarget = targetSeconds * 2
         const remainingToTwoXTarget = twoXTarget - currentElapsed
         if (remainingToTwoXTarget > 0) {
-          const targetMinutes = Math.floor(targetSeconds / 60)
-          const twoXMinutes = targetMinutes * 2
+          const baseMinutes = Math.floor(targetSeconds / 60)
+          const twoXMinutes = baseMinutes * 2
           const newTwoXId = await scheduleNotificationWithDelay(
             'Zen Tracker',
             `Amazing! You've reached 2x your goal - ${twoXMinutes} minutes of ${activity.name}! 🎯`,

@@ -53,20 +53,12 @@ export default function App() {
       if (hasPermission) {
         if (TEST_MODE) {
           // 테스트 모드: 30분마다 알림
-          const isTestScheduled = await NotificationService.isTestReminderScheduled()
-          if (!isTestScheduled) {
-            const testId = await NotificationService.scheduleTestReminder()
-            if (testId) {
-              console.log('🔔 TEST MODE: Notification will be sent every 30 minutes')
-              console.log('Test reminder ID:', testId)
-            }
-          } else {
-            console.log('🔔 TEST MODE: Already scheduled (every 30 min)')
-          }
+          // Test mode code removed - test methods no longer exist
+          console.log('🔔 TEST MODE: Test notifications disabled')
         } else {
           // 프로덕션 모드: 매일 오전 9시
           // Cancel any test reminders if switching from test mode
-          await NotificationService.cancelTestReminder()
+          // Test reminder cancellation removed
           
           // 일일 리마인더 설정 (매일 오전 9시)
           // Schedule daily reminder at 9:00 AM if permission exists
