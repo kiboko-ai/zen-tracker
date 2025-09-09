@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Platform } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -44,6 +45,19 @@ export default function App() {
       
       // Initialize notification service
       await NotificationService.initialize()
+      
+      // Request notification permissions on Android (required for Android 13+)
+      if (Platform.OS === 'android') {
+        const hasPermission = await NotificationService.requestPermissions()
+        console.log('Android notification permission:', hasPermission ? 'Granted' : 'Denied')
+        
+        // Test immediate notification on Android
+        if (hasPermission) {
+          console.log('Testing Android notification...')
+          await NotificationService.scheduleGoalAchievementNotification('Test Activity', 5, 3)
+          console.log('Test notification scheduled for 3 seconds from now')
+        }
+      }
       
       // TEST MODE: 30분마다 알림 (테스트용)
       // Uncomment the following block to enable test notifications every 30 minutes
