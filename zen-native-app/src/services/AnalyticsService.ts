@@ -1,21 +1,14 @@
-// Firebase Analytics temporarily disabled - package not installed
-// import analytics from '@react-native-firebase/analytics'
-
-// Mock analytics function for now
-const analytics = () => ({
-  logEvent: async (eventName: string, params?: any) => {},
-  logScreenView: async (params: any) => {},
-  setUserProperty: async (name: string, value: string) => {},
-})
+import analytics from '@react-native-firebase/analytics'
 
 class AnalyticsService {
   // 스플래시 이벤트
   async logAppOpen() {
     try {
-      // Firebase Analytics disabled
-      // await analytics().logEvent('app_open', {
-      //   timestamp: new Date().toISOString(),
-      // })
+      // console.log('📊 Attempting to log app_open event...')
+      await analytics().logEvent('app_open', {
+        timestamp: new Date().toISOString(),
+      })
+      // console.log('✅ GA Event: app_open')
     } catch (error) {
       // console.error('❌ Analytics error:', error)
       // console.error('Error details:', JSON.stringify(error))
