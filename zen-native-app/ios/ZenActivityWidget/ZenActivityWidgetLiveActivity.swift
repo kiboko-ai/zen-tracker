@@ -51,8 +51,25 @@ struct ZenActivityWidgetLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
+                    // Show target time instead of progress bar
                     if context.attributes.targetSeconds > 0 {
-                        DynamicIslandProgressView(context: context)
+                        HStack(spacing: 4) {
+                            Image(systemName: "flag.checkered")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                            Text("Target: \(formatTime(seconds: context.attributes.targetSeconds))")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    } else {
+                        HStack(spacing: 4) {
+                            Image(systemName: "infinity")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                            Text("No target")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
                     }
                 }
             } compactLeading: {
@@ -144,19 +161,16 @@ struct LockScreenLiveActivityView: View {
                 Spacer()
             }
             
-            // Progress Bar with real-time updates
+            // Target time display (instead of progress bar)
             if context.attributes.targetSeconds > 0 {
-                ProgressBarView(context: context)
+                Text("Target: \(formatTime(seconds: context.attributes.targetSeconds))")
+                    .font(.caption)
+                    .foregroundColor(.gray)
             } else {
                 // Infinity mode
-                HStack {
-                    Image(systemName: "infinity")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    Text("No target set")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
+                Image(systemName: "infinity")
+                    .font(.caption)
+                    .foregroundColor(.gray)
             }
         }
         .padding()
@@ -165,7 +179,11 @@ struct LockScreenLiveActivityView: View {
 
 
 
-// MARK: - Dynamic Island Progress View
+// MARK: - Removed Progress Views
+// Progress bars and percentages have been removed due to Live Activity limitations
+// These views are no longer used but kept commented for reference
+
+/*
 struct DynamicIslandProgressView: View {
     let context: ActivityViewContext<ZenActivityAttributes>
     
@@ -186,12 +204,10 @@ struct DynamicIslandProgressView: View {
     }
 }
 
-// MARK: - Progress Component with Real-time updates
 struct ProgressBarView: View {
     let context: ActivityViewContext<ZenActivityAttributes>
     
     var body: some View {
-        // Use TimelineView for real-time updates
         TimelineView(.animation) { timeline in
             let progress: Double = {
                 if context.state.isPaused {
@@ -224,6 +240,7 @@ struct ProgressBarView: View {
         }
     }
 }
+*/
 
 // Helper Functions
 private func formatTime(seconds: Int) -> String {

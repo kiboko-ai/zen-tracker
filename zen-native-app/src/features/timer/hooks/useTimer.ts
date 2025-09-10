@@ -36,7 +36,7 @@ export const useTimer = ({ targetDuration, onComplete, onTick }: UseTimerProps) 
   }
 
   useEffect(() => {
-    let interval: number | null = null
+    let interval: string | null = null
 
     if (isRunning && !isPaused) {
       interval = BackgroundTimer.setInterval(() => {

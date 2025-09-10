@@ -250,7 +250,7 @@ export const useStore = create<AppState>()(
             const updatedActivities = mergedActivities.map(activity => {
               const activitySessions = allSessions.filter(s => s.activityId === activity.id)
               const calculatedTotalTime = activitySessions.reduce((sum, session) => sum + session.duration, 0)
-              const latestSession = activitySessions.reduce((latest, session) => 
+              const latestSession = activitySessions.reduce<Session | null>((latest, session) => 
                 new Date(session.startTime) > new Date(latest?.startTime || 0) ? session : latest, null)
               
               return {
@@ -306,7 +306,7 @@ export const useStore = create<AppState>()(
             const finalAppendActivities = appendActivities.map(activity => {
               const activitySessions = allAppendSessions.filter(s => s.activityId === activity.id)
               const calculatedTotalTime = activitySessions.reduce((sum, session) => sum + session.duration, 0)
-              const latestSession = activitySessions.reduce((latest, session) => 
+              const latestSession = activitySessions.reduce<Session | null>((latest, session) => 
                 new Date(session.startTime) > new Date(latest?.startTime || 0) ? session : latest, null)
               
               return {

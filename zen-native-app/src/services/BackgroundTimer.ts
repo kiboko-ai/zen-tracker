@@ -101,6 +101,15 @@ class BackgroundTimerService {
     this.listeners.clear();
     this.intervals.clear();
   }
+
+  // Alias methods for backward compatibility
+  setInterval(callback: () => void, ms: number): string {
+    return this.setBackgroundInterval(callback, ms);
+  }
+
+  clearInterval(id: string) {
+    this.clearBackgroundInterval(id);
+  }
 }
 
 export default new BackgroundTimerService();

@@ -96,28 +96,57 @@ export default function TimerPage() {
   const startTimeRef = useRef<Date | null>(null)
   const pausedDurationRef = useRef<number>(0)
   const pauseStartRef = useRef<Date | null>(null)
+  const isPausedRef = useRef<boolean>(false)
+  const liveActivityIdRef = useRef<string | null>(null)
   const targetSeconds = targetHours * 3600 + targetMinutes * 60
+
+  // Update isPausedRef when isPaused changes
+  useEffect(() => {
+    isPausedRef.current = isPaused
+  }, [isPaused])
+
+  // Update liveActivityIdRef when liveActivityId changes
+  useEffect(() => {
+    liveActivityIdRef.current = liveActivityId
+  }, [liveActivityId])
 
   useEffect(() => {
     console.log('🔴 useEffect triggered - isRunning:', isRunning, 'isPaused:', isPaused, 'liveActivityId:', liveActivityId)
+    
+    // Clear existing interval first
+    if (intervalRef.current) {
+      BackgroundTimer.clearBackgroundInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    
     if (isRunning && startTimeRef.current) {  // Remove !isPaused condition to keep updating Live Activity
       // Use BackgroundTimer for accurate time tracking
       const id = BackgroundTimer.setBackgroundInterval(() => {
         if (startTimeRef.current) {
-          // When paused, use the frozen elapsed time, otherwise calculate current
-          const elapsed = isPaused 
-            ? seconds  // Use the frozen time when paused
-            : BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+          // Calculate elapsed time differently based on pause state
+          let elapsed: number
           
-          // Only update seconds when not paused
-          if (!isPaused) {
+          if (isPausedRef.current && pauseStartRef.current) {
+            // When paused, use the elapsed time at the moment of pause
+            // Don't add the time that has passed since pause started
+            const timeSincePause = Math.floor((new Date().getTime() - pauseStartRef.current.getTime()) / 1000)
+            elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current + timeSincePause)
+          } else {
+            // When running, calculate normally
+            elapsed = BackgroundTimer.getElapsedTime(startTimeRef.current, pausedDurationRef.current)
+          }
+          
+          // Only update seconds when not paused - use ref to get current value
+          if (!isPausedRef.current) {
             setSeconds(elapsed)
           }
           
-          // ALWAYS update Live Activity to reflect current state
-          if (liveActivityId) {
-            console.log(`📱 Updating Live Activity - elapsed: ${elapsed}, isPaused: ${isPaused}`)
-            LiveActivityService.updateActivity(liveActivityId, elapsed, isPaused)
+          // Update Live Activity only when running (not paused)
+          // When paused, the Live Activity should keep showing the paused state
+          // without constant updates that might cause timing issues
+          if (liveActivityIdRef.current && !isPausedRef.current) {
+            console.log(`📱 Updating Live Activity - elapsed: ${elapsed}, isPaused: ${isPausedRef.current}`)
+            LiveActivityService.updateActivity(liveActivityIdRef.current, elapsed, isPausedRef.current)
           }
           
           // Animate completion dot when goal is reached
@@ -148,11 +177,6 @@ export default function TimerPage() {
       }, 1000)
       
       intervalRef.current = id
-    } else {
-      if (intervalRef.current) {
-        BackgroundTimer.clearBackgroundInterval(intervalRef.current)
-        intervalRef.current = null
-      }
     }
     
     return () => {
@@ -161,7 +185,7 @@ export default function TimerPage() {
         intervalRef.current = null
       }
     }
-  }, [isRunning, isPaused, targetSeconds, completionDotAnim, liveActivityId, hasNotifiedGoal, hasNotifiedTargetPlusHour, hasNotifiedTwoXTarget])
+  }, [isRunning, targetSeconds, completionDotAnim, hasNotifiedGoal, hasNotifiedTargetPlusHour, hasNotifiedTwoXTarget])
 
 
   useEffect(() => {
@@ -177,7 +201,43 @@ export default function TimerPage() {
         useNativeDriver: true,
       }),
     ]).start()
-  }, [isRunning])
+  }, [fadeAnim, scaleAnim])
+
+  // Separate cleanup effect that only runs on unmount
+  useEffect(() => {
+    // This cleanup function only runs when component unmounts
+    return () => {
+      console.log('🧹 Component unmounting - Cleaning up timer and notifications...')
+      
+      // Clear the background timer
+      if (intervalRef.current) {
+        BackgroundTimer.clearBackgroundInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      
+      // Cancel all scheduled notifications when component unmounts (app killed)
+      const cancelAllScheduledNotifications = async () => {
+        try {
+          // Cancel ALL notifications (safer approach for unmount)
+          // Since we can't access the latest state values due to stale closure,
+          // it's better to cancel all notifications
+          await cancelAllNotifications()
+          
+          // End Live Activity if exists
+          if (liveActivityIdRef.current) {
+            console.log(`🛑 Ending Live Activity: ${liveActivityIdRef.current}`)
+            await LiveActivityService.endActivity(liveActivityIdRef.current)
+          }
+          
+          console.log('✅ All notifications and timers cleaned up')
+        } catch (error) {
+          console.error('Error cleaning up notifications:', error)
+        }
+      }
+      
+      cancelAllScheduledNotifications()
+    }
+  }, []) // Empty dependency array - only runs on unmount
 
   const handleStart = async () => {
     // Request notification permission on first timer start
@@ -219,8 +279,8 @@ export default function TimerPage() {
     
     // Log timer start event
     if (activity) {
-      const targetMinutes = targetHours * 60 + targetMinutes
-      AnalyticsService.logTimerStart(activityId, activity.name, targetMinutes)
+      const totalMinutes = targetHours * 60 + targetMinutes
+      AnalyticsService.logTimerStart(activityId, activity.name, totalMinutes)
     }
     
     // Check if it's before 9 AM and cancel daily reminder if not already cancelled today
@@ -237,29 +297,29 @@ export default function TimerPage() {
     
     if (activity && hasPermission) {
       if (targetSeconds > 0) {
-        const targetMinutes = Math.floor(targetSeconds / 60)
+        const calculatedMinutes = Math.floor(targetSeconds / 60)
         
         // Case 1: 목표달성 Push
-        const goalId = await scheduleGoalNotification(activity.name, targetMinutes, targetSeconds)
+        const goalId = await scheduleGoalNotification(activity.name, calculatedMinutes, targetSeconds)
         setGoalNotificationId(goalId)
         
         // Case 3: 2x 목표달성 Push
-        const twoXId = await scheduleTwoXTargetNotification(activity.name, targetMinutes)
+        const twoXId = await scheduleTwoXTargetNotification(activity.name, calculatedMinutes)
         setTwoXTargetNotificationId(twoXId)
         
         // Case 2 & 4: 30분 간격 Push 스케줄링
         // 특별한 경우: 15, 45, 75분 등 (15 + 30*n)
-        const is15PlusMultiple30 = targetMinutes === 15 || (targetMinutes > 15 && (targetMinutes - 15) % 30 === 0)
+        const is15PlusMultiple30 = calculatedMinutes === 15 || (calculatedMinutes > 15 && (calculatedMinutes - 15) % 30 === 0)
         
         if (is15PlusMultiple30) {
           // Case 4: 2x 이후부터 30분 간격
-          const startAfter = targetMinutes * 2 // 2x 목표 이후부터 시작
+          const startAfter = calculatedMinutes * 2 // 2x 목표 이후부터 시작
           const intervalIds = await scheduleThirtyMinuteIntervals(activity.name, startAfter, 10)
           setThirtyMinIntervalIds(intervalIds)
-        } else if (targetMinutes >= 30) {
+        } else if (calculatedMinutes >= 30) {
           // Case 2: 설정시간이 30분 이상이면 30분 초과 시점부터 30분 간격
-          const firstInterval = Math.ceil(targetMinutes / 30) * 30 // 다음 30분 배수
-          if (firstInterval > targetMinutes) {
+          const firstInterval = Math.ceil(calculatedMinutes / 30) * 30 // 다음 30분 배수
+          if (firstInterval > calculatedMinutes) {
             // 첫 30분 간격 알림부터 시작 (목표 시간과 겹치지 않도록)
             const intervalIds = await scheduleThirtyMinuteIntervals(activity.name, firstInterval - 30, 10)
             setThirtyMinIntervalIds(intervalIds)
@@ -279,9 +339,9 @@ export default function TimerPage() {
     // Start Live Activity (iOS 16.1+, no permission needed)
     if (activity) {
       console.log('🟢 Starting Live Activity...')
-      const targetMinutes = targetSeconds > 0 ? Math.floor(targetSeconds / 60) : 0  // 0 for infinity mode
-      const activityId = await startLiveActivity(activity.name, targetMinutes)
-      console.log(`🟢 Live Activity started - Mode: ${targetSeconds > 0 ? `${targetMinutes}min` : 'Infinity'}, ID: ${activityId}`)
+      const liveActivityMinutes = targetSeconds > 0 ? Math.floor(targetSeconds / 60) : 0  // 0 for infinity mode
+      const activityId = await startLiveActivity(activity.name, liveActivityMinutes)
+      console.log(`🟢 Live Activity started - Mode: ${targetSeconds > 0 ? `${liveActivityMinutes}min` : 'Infinity'}, ID: ${activityId}`)
       setLiveActivityId(activityId)
     }
   }
@@ -345,6 +405,13 @@ export default function TimerPage() {
     }
     setIsPaused(false)
     
+    // Update Live Activity to resume state
+    if (liveActivityIdRef.current) {
+      const currentElapsed = seconds
+      console.log('▶️ Sending resume state to Live Activity with elapsed:', currentElapsed)
+      await LiveActivityService.updateActivity(liveActivityIdRef.current, currentElapsed, false)
+    }
+    
     // Reschedule notifications based on remaining time
     console.log('▶️ Rescheduling notifications on resume')
     const currentElapsed = seconds // Current elapsed seconds
@@ -369,8 +436,8 @@ export default function TimerPage() {
         const targetPlusHour = targetSeconds + 3600
         const remainingToTargetPlusHour = targetPlusHour - currentElapsed
         if (remainingToTargetPlusHour > 0) {
-          const targetMinutes = Math.floor(targetSeconds / 60)
-          const totalMinutes = targetMinutes + 60
+          const baseMinutes = Math.floor(targetSeconds / 60)
+          const totalMinutes = baseMinutes + 60
           const newTargetPlusHourId = await scheduleNotificationWithDelay(
             'Zen Tracker',
             `You've been focusing on ${activity.name} for ${totalMinutes} minutes - an hour past your goal!`,
@@ -386,8 +453,8 @@ export default function TimerPage() {
         const twoXTarget = targetSeconds * 2
         const remainingToTwoXTarget = twoXTarget - currentElapsed
         if (remainingToTwoXTarget > 0) {
-          const targetMinutes = Math.floor(targetSeconds / 60)
-          const twoXMinutes = targetMinutes * 2
+          const baseMinutes = Math.floor(targetSeconds / 60)
+          const twoXMinutes = baseMinutes * 2
           const newTwoXId = await scheduleNotificationWithDelay(
             'Zen Tracker',
             `Amazing! You've reached 2x your goal - ${twoXMinutes} minutes of ${activity.name}! 🎯`,
