@@ -12,11 +12,14 @@ interface UseNotificationsReturn {
   scheduleCompletionNotification: (activityName: string, totalMinutes: number) => Promise<string | null>;
   scheduleHourlyNotification: (activityName: string) => Promise<string | null>;
   scheduleTargetPlusOneHourNotification: (activityName: string, targetMinutes: number) => Promise<string | null>;
+  scheduleTwoXTargetNotification: (activityName: string, targetMinutes: number) => Promise<string | null>;
+  scheduleThirtyMinuteIntervals: (activityName: string, startAfterMinutes: number, count?: number) => Promise<string[]>;
   scheduleDailyReminder: () => Promise<string | null>;
   cancelDailyReminder: () => Promise<boolean>;
   isDailyReminderScheduled: () => Promise<boolean>;
   cancelNotification: (notificationId: string) => Promise<void>;
   cancelAllNotifications: () => Promise<void>;
+  scheduleNotificationWithDelay: (title: string, body: string, delaySeconds: number, data?: any) => Promise<string | null>;
   startLiveActivity: (activityName: string, targetMinutes: number) => Promise<string | null>;
 }
 
@@ -119,6 +122,35 @@ export const useNotifications = (): UseNotificationsReturn => {
     [hasPermission]
   );
 
+  const scheduleTwoXTargetNotification = useCallback(
+    async (activityName: string, targetMinutes: number): Promise<string | null> => {
+      if (!hasPermission) {
+        console.log('No permission for 2x target notifications');
+        return null;
+      }
+      return await NotificationService.scheduleTwoXTargetNotification(
+        activityName,
+        targetMinutes
+      );
+    },
+    [hasPermission]
+  );
+
+  const scheduleThirtyMinuteIntervals = useCallback(
+    async (activityName: string, startAfterMinutes: number, count?: number): Promise<string[]> => {
+      if (!hasPermission) {
+        console.log('No permission for 30-min interval notifications');
+        return [];
+      }
+      return await NotificationService.scheduleThirtyMinuteIntervals(
+        activityName,
+        startAfterMinutes,
+        count
+      );
+    },
+    [hasPermission]
+  );
+
   /**
    * Schedule daily reminder at 9:00 AM
    * 매일 오전 9시에 앱 사용 권유 알림을 설정합니다
@@ -198,6 +230,8 @@ export const useNotifications = (): UseNotificationsReturn => {
     scheduleCompletionNotification,
     scheduleHourlyNotification,
     scheduleTargetPlusOneHourNotification,
+    scheduleTwoXTargetNotification,
+    scheduleThirtyMinuteIntervals,
     scheduleDailyReminder,        // 일일 리마인더 스케줄링
     cancelDailyReminder,          // 일일 리마인더 취소
     isDailyReminderScheduled,     // 일일 리마인더 상태 확인
